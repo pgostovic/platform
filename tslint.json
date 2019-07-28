@@ -1,0 +1,14 @@
+{
+  "defaultSeverity": "warning",
+  "extends": ["tslint:recommended", "tslint-eslint-rules", "tslint-config-prettier"],
+  "jsRules": {},
+  "rules": {
+    "quotemark": [true, "single", "avoid-escape"],
+    "trailing-comma": [true, { "multiline": "always", "singleline": "never" }],
+    "object-literal-sort-keys": {
+      "options": "match-declaration-order"
+    },
+    "max-line-length": [true, 120]
+  },
+  "rulesDirectory": []
+}
