@@ -1,5 +1,5 @@
 import { createLogger } from '@phnq/log';
-import { IAnomalyMessage, IErrorMessage, IMessage, MessageConnection, MessageType } from '@phnq/message';
+import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType, Value } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -31,29 +31,11 @@ export abstract class DomainService {
     this.apiConnection = new MessageConnection(
       await NATSTransport.create(this.natsClient, {
         subscriptions: [`${this.domain}.*`],
-        publishSubject: (message: IMessage) => {
-          switch (message.type) {
-            case MessageType.Response:
-            case MessageType.Multi:
-              return (message.data as IDomainServiceResponse).origin;
-
-            case MessageType.Anomaly:
-              return ((message as IAnomalyMessage).data.requestData as IDomainServiceRequest).origin;
-
-            case MessageType.Error:
-              return ((message as IErrorMessage).data.requestData as IDomainServiceRequest).origin;
-          }
-          throw new Error('Unable to derive publish subject');
-        },
+        publishSubject: mapPublishSubject,
       }),
     );
 
-    this.apiConnection.addResponseMapper((req: IDomainServiceRequest, resp: any) => ({
-      info: resp,
-      origin: req.origin,
-    }));
-
-    this.apiConnection.onReceive<IDomainServiceRequest>(this.onReceive);
+    this.apiConnection.onReceive(this.onReceive);
 
     await this.scanForHandlers();
   }
@@ -92,7 +74,7 @@ export abstract class DomainService {
     });
   }
 
-  private onReceive = (message: IDomainServiceRequest) => {
+  private onReceive = async (message: Value): Promise<Value | AsyncIterableIterator<Value>> => {
     const req = message as IDomainServiceRequest;
     const localType = req.type.replace(new RegExp(`^${this.domain}\.`), '');
 
@@ -101,6 +83,31 @@ export abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    return handler(req.info);
+    const resp = await handler(req.info, req.connectionId);
+
+    if (typeof resp === 'object' && (resp as AsyncIterableIterator<Value>)[Symbol.asyncIterator]) {
+      return (async function*() {
+        for await (const r of resp as AsyncIterableIterator<Value>) {
+          yield { info: r as Value, origin: req.origin };
+        }
+      })();
+    } else {
+      return { info: resp as Value, origin: req.origin };
+    }
   };
 }
+
+const mapPublishSubject = (message: Message) => {
+  switch (message.type) {
+    case MessageType.Response:
+    case MessageType.Multi:
+      return (message.data as IDomainServiceResponse).origin;
+
+    case MessageType.Anomaly:
+      return ((message as AnomalyMessage).data.requestData as IDomainServiceRequest).origin;
+
+    case MessageType.Error:
+      return ((message as ErrorMessage).data.requestData as IDomainServiceRequest).origin;
+  }
+  throw new Error('Unable to derive publish subject');
+};

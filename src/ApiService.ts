@@ -1,12 +1,12 @@
 import { createLogger } from '@phnq/log';
-import { ConnectionId, IMessage, MessageConnection, WebSocketMessageServer } from '@phnq/message';
+import { ConnectionId, Message, MessageConnection, Value, WebSocketMessageServer } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import http from 'http';
 import { Client as NATSClient, connect as connectNATS } from 'ts-nats';
 import uuid from 'uuid/v4';
 import { IApiServiceRequest, IDomainServiceRequest, IDomainServiceResponse } from './types';
 
-const log = createLogger('server');
+const log = createLogger('ApiService');
 
 const ORIGIN = uuid().replace(/[^\w]/g, '');
 
@@ -14,19 +14,17 @@ export class ApiService {
   private port: number;
   private httpServer: http.Server;
   private natsClient?: NATSClient;
-  private messageServer: WebSocketMessageServer<IApiServiceRequest>;
+  private messageServer: WebSocketMessageServer;
   private servicesConnection?: MessageConnection;
 
   constructor(port: number) {
     this.port = port;
     this.httpServer = http.createServer();
 
-    this.messageServer = new WebSocketMessageServer<IApiServiceRequest>({
+    this.messageServer = new WebSocketMessageServer({
       httpServer: this.httpServer,
       onReceive: this.onReceiveClientMessage,
     });
-
-    this.messageServer.addResponseMapper((_, res: IDomainServiceResponse) => res.info);
   }
 
   public async start() {
@@ -42,7 +40,7 @@ export class ApiService {
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
       subscriptions: [ORIGIN],
-      publishSubject: (message: IMessage) => (message.data as IDomainServiceRequest).type,
+      publishSubject: (message: Message) => (message.data as IDomainServiceRequest).type,
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);
@@ -70,9 +68,27 @@ export class ApiService {
     log('Stopped.');
   }
 
-  private onReceiveClientMessage = (_: ConnectionId, { type, info }: IApiServiceRequest) => {
+  private onReceiveClientMessage = async (
+    connectionId: ConnectionId,
+    apiRequest: Value,
+  ): Promise<Value | AsyncIterableIterator<Value>> => {
+    const { type, info } = apiRequest as IApiServiceRequest;
+
     const servicesConnection = this.servicesConnection as MessageConnection;
-    const serviceRequest = { type, info, origin: ORIGIN };
-    return servicesConnection.request(serviceRequest);
+    const serviceRequest: IDomainServiceRequest = { type, info, origin: ORIGIN, connectionId };
+    const serviceResponse = await servicesConnection.request(serviceRequest);
+
+    if (
+      typeof serviceResponse === 'object' &&
+      (serviceResponse as AsyncIterableIterator<Value>)[Symbol.asyncIterator]
+    ) {
+      return (async function*() {
+        for await (const resp of serviceResponse as AsyncIterableIterator<Value>) {
+          yield (resp as IDomainServiceResponse).info;
+        }
+      })();
+    } else {
+      return (serviceResponse as IDomainServiceResponse).info;
+    }
   };
 }

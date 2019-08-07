@@ -1,22 +1,31 @@
-import { IValue } from '@phnq/message';
+import { Data, Value } from '@phnq/message';
 
-export interface IApiServiceRequest {
+export interface IApiServiceRequest extends Data {
   type: string;
-  info: IValue;
+  info: Value;
 }
 
-export interface IDomainServiceRequest {
+export interface IApiServiceResponse extends Data {
   type: string;
-  info: IValue;
+  info: Value;
+}
+
+export interface IDomainServiceRequest extends Data {
+  type: string;
+  info: Value;
+  origin: string;
+  connectionId: string;
+}
+
+export interface IDomainServiceResponse extends Data {
+  info: Value;
   origin: string;
 }
 
-export interface IDomainServiceResponse {
-  info: IValue;
-  origin: string;
-}
-
-export type DomainServiceHandler = (params: any) => Promise<IValue> | AsyncIterableIterator<IValue>;
+export type DomainServiceHandler = (
+  params: any,
+  connectionId?: string,
+) => Promise<Value> | AsyncIterableIterator<Value>;
 
 export interface IDomainServiceApi {
   [key: string]: DomainServiceHandler;

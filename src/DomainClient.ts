@@ -1,5 +1,7 @@
 import { createLogger } from '@phnq/log';
 import { WebSocketMessageClient } from '@phnq/message/WebSocketMessageClient';
+import prettyHrtime from 'pretty-hrtime';
+import { IApiServiceRequest } from './types';
 
 const log = createLogger('DomainClient');
 
@@ -48,17 +50,27 @@ export default class DomainClient {
 
   private async initialize() {
     const messageClient = await WebSocketMessageClient.create(this.url);
+    messageClient.onConversation(c => {
+      log.groupCollapsed(
+        `${(c.request.data! as IApiServiceRequest).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
+        l => {
+          c.responses.forEach(r => {
+            l('%s', prettyHrtime(r.time), r.message);
+          });
+        },
+      );
+    });
     this.messageClient = messageClient;
-    const result = await this.messageClient.requestOne<{ handlers: string[] }>({
+    const result = (await this.messageClient.requestOne({
       info: {},
       type: `${this.domain}.handlers`,
-    });
+    })) as { handlers: string[] };
 
     result.handlers.forEach(handler => {
       Object.defineProperty(this, handler, {
         enumerable: true,
-        value: async (data: any) => this.handle(handler, data),
-        writable: true,
+        value: (data: any) => this.handle(handler, data),
+        writable: false,
       });
     });
 

@@ -1,3 +1,4 @@
+import { Anomaly } from '@phnq/message';
 import DomainClient from '../../DomainClient';
 import { IAuthApi } from './AuthApi';
 
@@ -14,7 +15,7 @@ export default class AuthClient extends DomainClient {
     try {
       return await super.handle(type, data);
     } catch (err) {
-      console.log('THERE WAS AN ERR', err);
+      console.log('THERE WAS AN ERR', err.constructor.name, err instanceof Anomaly);
       throw err;
     }
   }
