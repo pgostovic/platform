@@ -1,7 +1,7 @@
 import { createLogger } from '@phnq/log';
 import { WebSocketMessageClient } from '@phnq/message/WebSocketMessageClient';
 import prettyHrtime from 'pretty-hrtime';
-import { IApiServiceRequest } from './types';
+import { IApiServiceMessage } from './types';
 
 const log = createLogger('DomainClient');
 
@@ -31,7 +31,7 @@ export default class DomainClient {
 
   private url: string;
   private domain: string;
-  private messageClient?: WebSocketMessageClient;
+  private messageClient?: WebSocketMessageClient<IApiServiceMessage>;
   private typesLoaded = false;
   private q: Array<{ key: string; args: any[]; resolve: (msg: any) => void; reject: (err: Error) => void }> = [];
   private proxy?: ProxyConstructor;
@@ -42,17 +42,17 @@ export default class DomainClient {
   }
 
   protected handle(type: string, data: any) {
-    return (this.messageClient as WebSocketMessageClient).request({
+    return (this.messageClient as WebSocketMessageClient<IApiServiceMessage>).request({
       info: data,
       type: `${this.domain}.${type}`,
     });
   }
 
   private async initialize() {
-    const messageClient = await WebSocketMessageClient.create(this.url);
+    const messageClient = await WebSocketMessageClient.create<IApiServiceMessage>(this.url);
     messageClient.onConversation(c => {
       log.groupCollapsed(
-        `${(c.request.data! as IApiServiceRequest).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
+        `${(c.request.data! as IApiServiceMessage).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
         l => {
           c.responses.forEach(r => {
             l('%s', prettyHrtime(r.time), r.message);
@@ -62,8 +62,8 @@ export default class DomainClient {
     });
     this.messageClient = messageClient;
     const result = (await this.messageClient.requestOne({
-      info: {},
       type: `${this.domain}.handlers`,
+      info: {},
     })) as { handlers: string[] };
 
     result.handlers.forEach(handler => {
