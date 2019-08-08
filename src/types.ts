@@ -1,11 +1,11 @@
 import { Data, Value } from '@phnq/message';
 
-export interface IApiServiceMessage extends Data {
+export interface ApiServiceMessage extends Data {
   type: string;
   info: Value;
 }
 
-export interface IDomainServiceMessage extends Data {
+export interface DomainServiceMessage extends Data {
   type?: string;
   info: Value;
   origin: string;
@@ -13,11 +13,12 @@ export interface IDomainServiceMessage extends Data {
 }
 
 export type DomainServiceHandler = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any,
-  connectionId?: string,
+  connectionId?: string
 ) => Promise<Value> | AsyncIterableIterator<Value>;
 
-export interface IDomainServiceApi {
+export interface DomainServiceApi {
   [key: string]: DomainServiceHandler;
   handlers(): Promise<{ domain: string; handlers: string[] }>;
 }

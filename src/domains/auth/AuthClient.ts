@@ -1,17 +1,23 @@
-import { Anomaly } from '@phnq/message';
+import { Anomaly, Value } from '@phnq/message';
 import DomainClient from '../../DomainClient';
-import { IAuthApi } from './AuthApi';
+import { ApiServiceMessage } from '../../types';
+import { AuthApi } from './AuthApi';
 
 export default class AuthClient extends DomainClient {
-  public static create(url: string): IAuthApi {
-    return DomainClient.create(url, AuthClient);
+  public static create(url: string): AuthApi {
+    return DomainClient.create(url, AuthClient) as AuthApi;
   }
 
   protected constructor(url: string) {
     super(url, 'auth');
   }
 
-  protected async handle(type: string, data: any) {
+  // protected handle(type: string, data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
+
+  protected async handle(
+    type: string,
+    data: Value
+  ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
     try {
       return await super.handle(type, data);
     } catch (err) {

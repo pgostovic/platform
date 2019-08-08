@@ -1,6 +1,6 @@
-import { IDomainServiceApi } from '../../types';
+import { DomainServiceApi } from '../../types';
 
-export interface IAuthApi extends IDomainServiceApi {
+export interface AuthApi extends DomainServiceApi {
   authenticate: authenticate;
   createAccount: createAccount;
   createSession: createSession;

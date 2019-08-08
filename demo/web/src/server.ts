@@ -13,9 +13,7 @@ const koaApp = new Koa();
 (async () => {
   koaApp.use(await koaWebpack({ config: webpackConfig }));
 
-  const html = (await fs.readFile(
-    path.resolve(__dirname, 'index.html'),
-  )).toString();
+  const html = (await fs.readFile(path.resolve(__dirname, 'index.html'))).toString();
 
   koaApp.use(async ctx => {
     ctx.body = html;

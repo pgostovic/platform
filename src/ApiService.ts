@@ -4,7 +4,7 @@ import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import http from 'http';
 import { Client as NATSClient, connect as connectNATS } from 'ts-nats';
 import uuid from 'uuid/v4';
-import { IApiServiceMessage, IDomainServiceMessage } from './types';
+import { ApiServiceMessage, DomainServiceMessage } from './types';
 
 const log = createLogger('ApiService');
 
@@ -14,22 +14,22 @@ export class ApiService {
   private port: number;
   private httpServer: http.Server;
   private natsClient?: NATSClient;
-  private messageServer: WebSocketMessageServer<IApiServiceMessage>;
-  private servicesConnection?: MessageConnection<IDomainServiceMessage>;
+  private messageServer: WebSocketMessageServer<ApiServiceMessage>;
+  private servicesConnection?: MessageConnection<DomainServiceMessage>;
 
-  constructor(port: number) {
+  public constructor(port: number) {
     this.port = port;
     this.httpServer = http.createServer();
 
-    this.messageServer = new WebSocketMessageServer<IApiServiceMessage>({
+    this.messageServer = new WebSocketMessageServer<ApiServiceMessage>({
       httpServer: this.httpServer,
-      onReceive: this.onReceiveClientMessage,
+      onReceive: this.onReceiveClientMessage
     });
   }
 
-  public async start() {
+  public async start(): Promise<void> {
     log('Starting server...');
-    await new Promise(resolve => {
+    await new Promise((resolve): void => {
       this.httpServer.listen({ port: this.port }, resolve);
     });
     log('Server listening on port %d', this.port);
@@ -40,13 +40,13 @@ export class ApiService {
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
       subscriptions: [ORIGIN],
-      publishSubject: (message: Message<Value>) => (message.data as IDomainServiceMessage).type!,
+      publishSubject: (message: Message<Value>): string => (message.data as DomainServiceMessage).type as string
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);
   }
 
-  public async stop() {
+  public async stop(): Promise<void> {
     log('Stopping server...');
     if (this.natsClient) {
       this.natsClient.close();
@@ -55,9 +55,9 @@ export class ApiService {
     await this.messageServer.close();
 
     if (this.httpServer.listening) {
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject): void => {
         try {
-          this.httpServer.close(() => {
+          this.httpServer.close((): void => {
             resolve();
           });
         } catch (err) {
@@ -70,23 +70,23 @@ export class ApiService {
 
   private onReceiveClientMessage = async (
     connectionId: ConnectionId,
-    { type, info }: IApiServiceMessage,
-  ): Promise<IApiServiceMessage | AsyncIterableIterator<IApiServiceMessage>> => {
-    const servicesConnection = this.servicesConnection as MessageConnection<IDomainServiceMessage>;
-    const serviceRequest: IDomainServiceMessage = { type, info, origin: ORIGIN, connectionId };
+    { type, info }: ApiServiceMessage
+  ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> => {
+    const servicesConnection = this.servicesConnection as MessageConnection<DomainServiceMessage>;
+    const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId };
     const serviceResponse = await servicesConnection.request(serviceRequest);
 
     if (
       typeof serviceResponse === 'object' &&
       (serviceResponse as AsyncIterableIterator<Value>)[Symbol.asyncIterator]
     ) {
-      return (async function*(): AsyncIterableIterator<IApiServiceMessage> {
-        for await (const resp of serviceResponse as AsyncIterableIterator<IDomainServiceMessage>) {
-          yield (resp as IDomainServiceMessage).info as IApiServiceMessage;
+      return (async function*(): AsyncIterableIterator<ApiServiceMessage> {
+        for await (const resp of serviceResponse as AsyncIterableIterator<DomainServiceMessage>) {
+          yield (resp as DomainServiceMessage).info as ApiServiceMessage;
         }
       })();
     } else {
-      return (serviceResponse as IDomainServiceMessage).info as IApiServiceMessage;
+      return (serviceResponse as DomainServiceMessage).info as ApiServiceMessage;
     }
   };
 }
