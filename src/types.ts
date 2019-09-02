@@ -15,7 +15,7 @@ export interface DomainServiceMessage extends Data {
 export type DomainServiceHandler = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any,
-  connectionId?: string
+  connectionId?: string,
 ) => Promise<Value> | AsyncIterableIterator<Value>;
 
 export interface DomainServiceApi {

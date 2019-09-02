@@ -9,14 +9,14 @@ export interface AuthApi extends DomainServiceApi {
   setPassword: setPassword;
 }
 
-export type authenticate = (params: { token: string }) => Promise<{ authenticated: boolean }>;
+export type authenticate = ({ token }: { token: string }) => Promise<{ authenticated: boolean }>;
 
-export type createAccount = (params: { email: string }) => Promise<{ created: boolean }>;
+export type createAccount = ({ email }: { email: string }) => Promise<{ created: boolean }>;
 
-export type createSession = (params: { email: string; password: string }) => Promise<{ token: string }>;
+export type createSession = ({ email, password }: { email: string; password: string }) => Promise<{ token: string }>;
 
-export type createSessionWithCode = (params: { code: string }) => Promise<{ token: string }>;
+export type createSessionWithCode = ({ code }: { code: string }) => Promise<{ token: string }>;
 
 export type destroySession = () => Promise<{ destroyed: boolean }>;
 
-export type setPassword = (params: { password: string }) => Promise<{ passwordSet: boolean }>;
+export type setPassword = ({ password }: { password: string }) => Promise<{ passwordSet: boolean }>;

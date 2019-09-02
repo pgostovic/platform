@@ -1,34 +1,23 @@
-import { setPassword } from '../AuthApi';
+import { Anomaly } from '@phnq/message';
+import { search } from '@phnq/model';
+import bcrypt from 'bcrypt';
 
-const setPassword: setPassword = async params => {
-  console.log('setPassword', params);
-  return { passwordSet: true };
+import { setPassword } from '../AuthApi';
+import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
+
+const setPassword: setPassword = async ({ password }, connectionId?: string) => {
+  const session = await search(Session, { auxId: connectionId }).first();
+  if (session) {
+    const account = await session.account;
+    account.password = await bcrypt.hash(password, 5);
+    account.requirePasswordChange = false;
+    await account.save();
+
+    session.expiry = new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY);
+    await session.save();
+    return { passwordSet: true };
+  }
+  throw new Anomaly('No current session');
 };
 
 export default setPassword;
-
-// import bcrypt from 'bcrypt';
-// import { ISetPasswordParams, ISetPasswordResult } from '../../model/api';
-// import Session, { CREDENTIALS_SESSION_EXPIRY } from '../../model/session';
-// import Connection from '../connection';
-// import Service from '../service';
-
-// const setPassword = async (p: ISetPasswordParams, conn: Connection): Promise<ISetPasswordResult> => {
-//   if (conn.account) {
-//     conn.account.password = await bcrypt.hash(p.password, 5);
-//     conn.account.requires = {
-//       ...conn.account.requires,
-//       passwordChange: false,
-//     };
-//     conn.account.save();
-
-//     await new Session({
-//       ...conn.session,
-//       expiry: new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY),
-//     }).save();
-//     return { passwordSet: true, requires: conn.account.requires };
-//   }
-//   return { passwordSet: false };
-// };
-
-// export default setPassword as Service;

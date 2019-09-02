@@ -1,12 +1,12 @@
 import { createLogger } from '@phnq/log';
+import { Logger } from '@phnq/log/logger';
 import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType, Value } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Client as NATSClient, connect as connectNATS } from 'ts-nats';
-import { DomainServiceHandler, DomainServiceMessage } from './types';
+import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
-const log = createLogger('DomainService');
+import { DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';
 
@@ -25,29 +25,37 @@ const mapPublishSubject = (message: Message<Value>): string => {
   throw new Error('Unable to derive publish subject');
 };
 
-export abstract class DomainService {
-  private domain: string;
+interface Config {
+  domain: string;
+  natsConfig: NatsConnectionOptions;
+  handlerPaths: string[];
+}
+
+export default abstract class DomainService {
+  private config: Config;
+  private log: Logger;
   private natsClient?: NATSClient;
   private apiConnection?: MessageConnection<DomainServiceMessage>;
-  private handlerPaths: string[] = [];
   private handlers = new Map<string, DomainServiceHandler>();
 
-  public constructor(domain: string) {
-    this.domain = domain;
-  }
-
-  public addHandlerPath(handlerPath: string): void {
-    this.handlerPaths.push(handlerPath);
+  protected constructor(config: Config) {
+    this.config = config;
+    this.log = createLogger(config.domain);
   }
 
   public async start(): Promise<void> {
-    this.natsClient = await connectNATS();
+    const { domain, natsConfig } = this.config;
+    this.log('Starting...');
+
+    this.log('Connecting to NATS...');
+    this.natsClient = await connectNATS(natsConfig);
+    this.log('Connected to NATS.');
 
     this.apiConnection = new MessageConnection(
       await NATSTransport.create(this.natsClient, {
-        subscriptions: [`${this.domain}.*`],
-        publishSubject: mapPublishSubject
-      })
+        subscriptions: [`${domain}.*`],
+        publishSubject: mapPublishSubject,
+      }),
     );
 
     this.apiConnection.onReceive(this.onReceive);
@@ -56,43 +64,45 @@ export abstract class DomainService {
   }
 
   public stop(): void {
+    this.log('Stopping...');
     if (this.natsClient) {
       this.natsClient.close();
     }
   }
 
   private async scanForHandlers(): Promise<void> {
-    if (this.handlerPaths.length === 0) {
+    const { handlerPaths, domain } = this.config;
+
+    if (handlerPaths.length === 0) {
       throw new Error('No handler paths configured.');
     }
 
-    this.handlers.set(
-      HANDLERS,
-      async (): Promise<Value> => ({ domain: this.domain, handlers: [...this.handlers.keys()] })
-    );
+    this.log('handler paths: %O', handlerPaths);
 
-    this.handlerPaths.forEach(
+    this.handlers.set(HANDLERS, async (): Promise<Value> => ({ domain: domain, handlers: [...this.handlers.keys()] }));
+
+    handlerPaths.forEach(
       async (handlerPath): Promise<void> => {
-        (await fs.readdir(handlerPath))
-          .map((name): string => path.basename(name).replace(/\.(d\.ts|js|ts)$/, ''))
-          .forEach(
-            async (type): Promise<void> => {
-              let relHandlerPath = path.relative(__dirname, handlerPath);
-              if (relHandlerPath[0] !== '.') {
-                relHandlerPath = `./${relHandlerPath}`;
-              }
-              try {
-                const handler = (await import(`${relHandlerPath}/${type}`)).default as DomainServiceHandler;
-                this.handlers.set(type, handler);
-                log('Registered handler: ', type);
-              } catch (err) {
-                if (err.code !== 'MODULE_NOT_FOUND') {
-                  log('Not a valid handler: ', `${relHandlerPath}/${type}`);
-                }
+        new Set(
+          (await fs.readdir(handlerPath)).map((name): string => path.basename(name).replace(/\.(d\.ts|js|ts)$/, '')),
+        ).forEach(
+          async (type): Promise<void> => {
+            let relHandlerPath = path.relative(__dirname, handlerPath);
+            if (relHandlerPath[0] !== '.') {
+              relHandlerPath = `./${relHandlerPath}`;
+            }
+            try {
+              const handler = (await import(`${relHandlerPath}/${type}`)).default as DomainServiceHandler;
+              this.handlers.set(type, handler);
+              this.log('Registered handler: %s', type);
+            } catch (err) {
+              if (err.code !== 'MODULE_NOT_FOUND') {
+                this.log.warn('Not a valid handler: %s', `${relHandlerPath}/${type}`);
               }
             }
-          );
-      }
+          },
+        );
+      },
     );
   }
 
@@ -100,9 +110,9 @@ export abstract class DomainService {
     type,
     info,
     connectionId,
-    origin
+    origin,
   }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> => {
-    const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
+    const localType = (type || '').replace(new RegExp(`^${this.config.domain}\.`), '');
 
     const handler = this.handlers.get(localType);
     if (!handler) {

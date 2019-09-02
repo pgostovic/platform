@@ -1,8 +1,10 @@
 import { createLogger } from '@phnq/log';
+import { Logger } from '@phnq/log/logger';
+import { Value } from '@phnq/message';
 import { WebSocketMessageClient } from '@phnq/message/WebSocketMessageClient';
 import prettyHrtime from 'pretty-hrtime';
+
 import { ApiServiceMessage, DomainServiceApi } from './types';
-import { Value } from '@phnq/message';
 
 const log = createLogger('DomainClient');
 
@@ -30,7 +32,7 @@ export default class DomainClient {
                   client.q.push({ key, args, resolve, reject });
                 }))
         );
-      }
+      },
     });
 
     client.proxy = proxy;
@@ -53,7 +55,7 @@ export default class DomainClient {
   protected handle(type: string, data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
     return (this.messageClient as WebSocketMessageClient<ApiServiceMessage>).request({
       info: data,
-      type: `${this.domain}.${type}`
+      type: `${this.domain}.${type}`,
     });
   }
 
@@ -62,17 +64,17 @@ export default class DomainClient {
     messageClient.onConversation((c): void => {
       log.groupCollapsed(
         `${(c.request.data as ApiServiceMessage).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
-        (l): void => {
+        (l: Logger): void => {
           c.responses.forEach((r): void => {
             l('%s', prettyHrtime(r.time), r.message);
           });
-        }
+        },
       );
     });
     this.messageClient = messageClient;
     const result = (await this.messageClient.requestOne({
       type: `${this.domain}.handlers`,
-      info: {}
+      info: {},
     })) as { handlers: string[] };
 
     result.handlers.forEach((handler): void => {
@@ -80,7 +82,7 @@ export default class DomainClient {
         enumerable: true,
         value: (data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> =>
           this.handle(handler, data),
-        writable: false
+        writable: false,
       });
     });
 
@@ -101,7 +103,7 @@ export default class DomainClient {
           } catch (err) {
             reject(err);
           }
-        }
+        },
       );
     }
 

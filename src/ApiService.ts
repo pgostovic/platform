@@ -2,45 +2,57 @@ import { createLogger } from '@phnq/log';
 import { ConnectionId, Message, MessageConnection, Value, WebSocketMessageServer } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import http from 'http';
-import { Client as NATSClient, connect as connectNATS } from 'ts-nats';
+import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
+
 import { ApiServiceMessage, DomainServiceMessage } from './types';
 
 const log = createLogger('ApiService');
 
 const ORIGIN = uuid().replace(/[^\w]/g, '');
 
-export class ApiService {
-  private port: number;
+interface Config {
+  port: number;
+  natsConfig: NatsConnectionOptions;
+}
+
+export default class ApiService {
+  public static start(config: Config): void {
+    new ApiService(config).start();
+  }
+
+  private config: Config;
   private httpServer: http.Server;
   private natsClient?: NATSClient;
   private messageServer: WebSocketMessageServer<ApiServiceMessage>;
   private servicesConnection?: MessageConnection<DomainServiceMessage>;
 
-  public constructor(port: number) {
-    this.port = port;
+  private constructor(config: Config) {
+    this.config = config;
     this.httpServer = http.createServer();
 
     this.messageServer = new WebSocketMessageServer<ApiServiceMessage>({
       httpServer: this.httpServer,
-      onReceive: this.onReceiveClientMessage
+      onReceive: this.onReceiveClientMessage,
     });
   }
 
   public async start(): Promise<void> {
+    const { port, natsConfig } = this.config;
+
     log('Starting server...');
     await new Promise((resolve): void => {
-      this.httpServer.listen({ port: this.port }, resolve);
+      this.httpServer.listen({ port: port }, resolve);
     });
-    log('Server listening on port %d', this.port);
+    log('Server listening on port %d', port);
 
     log('Connecting to NATS...');
-    this.natsClient = await connectNATS();
+    this.natsClient = await connectNATS(natsConfig);
     log('Connected to NATS.');
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
       subscriptions: [ORIGIN],
-      publishSubject: (message: Message<Value>): string => (message.data as DomainServiceMessage).type as string
+      publishSubject: (message: Message<Value>): string => (message.data as DomainServiceMessage).type as string,
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);
@@ -70,7 +82,7 @@ export class ApiService {
 
   private onReceiveClientMessage = async (
     connectionId: ConnectionId,
-    { type, info }: ApiServiceMessage
+    { type, info }: ApiServiceMessage,
   ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> => {
     const servicesConnection = this.servicesConnection as MessageConnection<DomainServiceMessage>;
     const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId };

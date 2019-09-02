@@ -1,4 +1,5 @@
 import { Anomaly, Value } from '@phnq/message';
+
 import DomainClient from '../../DomainClient';
 import { ApiServiceMessage } from '../../types';
 import { AuthApi } from './AuthApi';
@@ -12,11 +13,9 @@ export default class AuthClient extends DomainClient {
     super(url, 'auth');
   }
 
-  // protected handle(type: string, data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
-
   protected async handle(
     type: string,
-    data: Value
+    data: Value,
   ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
     try {
       return await super.handle(type, data);
