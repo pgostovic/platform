@@ -2,7 +2,12 @@
   "name": "@phnq/platform",
   "version": "1.0.0",
   "description": "Stuff for microservices",
-  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pgostovic/platform.git"
+  },
+  "main": "index.server.js",
+  "browser": "index.client.js",
   "scripts": {
     "preinstall": "mkdir -p node_modules; touch node_modules/.nosync",
     "dist": "tsc",
@@ -14,7 +19,9 @@
     "api": "docker run -it --init -p 55555:80 --env NATS_SERVERS=$(ipconfig getifaddr en0) api",
     "build:auth": "npm run clean; npm run dist; cd dist; docker build -f ../build/auth/Dockerfile -t=auth .",
     "auth": "docker run -it --init --env NATS_SERVERS=$(ipconfig getifaddr en0) --env MONGODB_URI=mongodb://$(ipconfig getifaddr en0):27017/authdemo auth",
-    "test": "jest"
+    "test": "jest",
+    "release:patch": "npm version patch; npm run dist; cd dist; npm publish",
+    "release:minor": "npm version minor; npm run dist; cd dist; npm publish"
   },
   "author": "Patrick Gostovic",
   "license": "ISC",
