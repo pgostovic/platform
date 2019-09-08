@@ -10,7 +10,7 @@ const setPassword: setPassword = async ({ password }, connectionId?: string) => 
   if (session) {
     const account = await session.account;
     account.password = await bcrypt.hash(password, 5);
-    account.requirePasswordChange = false;
+    account.authStatus.requirePasswordChange = false;
     await account.save();
 
     session.expiry = new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY);

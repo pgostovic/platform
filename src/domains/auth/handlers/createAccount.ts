@@ -22,7 +22,7 @@ const createAccount: createAccount = async ({ email }) => {
 
   log('Created account with code: %s', account.authCode.code);
 
-  return { created: true };
+  return account.authStatus;
 };
 
 export default createAccount;
