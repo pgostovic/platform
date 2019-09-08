@@ -15,7 +15,7 @@ const setPassword: setPassword = async ({ password }, connectionId?: string) => 
 
     session.expiry = new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY);
     await session.save();
-    return { passwordSet: true };
+    return account.authStatus;
   }
   throw new Anomaly('No current session');
 };

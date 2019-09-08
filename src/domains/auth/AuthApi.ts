@@ -19,4 +19,4 @@ export type createSessionWithCode = ({ code }: { code: string }) => Promise<{ to
 
 export type destroySession = () => Promise<{ destroyed: boolean }>;
 
-export type setPassword = ({ password }: { password: string }) => Promise<{ passwordSet: boolean }>;
+export type setPassword = ({ password }: { password: string }) => Promise<AuthStatus>;
