@@ -1,9 +1,12 @@
+import { createLogger } from '@phnq/log';
 import { Anomaly } from '@phnq/message';
 import cryptoRandomString from 'crypto-random-string';
 import isEmail from 'validator/lib/isEmail';
 
 import { createAccount } from '../AuthApi';
 import Account, { AUTH_CODE_EXPIRY } from '../model/account';
+
+const log = createLogger('createAccount');
 
 const createAccount: createAccount = async ({ email }) => {
   if (!isEmail(email)) {
@@ -16,6 +19,8 @@ const createAccount: createAccount = async ({ email }) => {
     expiry: new Date(Date.now() + AUTH_CODE_EXPIRY),
   };
   await account.save();
+
+  log('Created account with code: %s', account.authCode.code);
 
   return { created: true };
 };
