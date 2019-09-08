@@ -1,5 +1,4 @@
-import { DomainServiceApi } from '../../types';
-import { AuthStatus } from './model/account';
+import { AuthStatus, DomainServiceApi } from '../../types';
 
 export interface AuthApi extends DomainServiceApi {
   authenticate: authenticate;

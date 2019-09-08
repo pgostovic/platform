@@ -1,9 +1,6 @@
-import { Data } from '@phnq/message';
 import { field, Model } from '@phnq/model';
 
-export interface AuthStatus extends Data {
-  requirePasswordChange: boolean;
-}
+import { AuthStatus } from '../../../types';
 
 export const AUTH_CODE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
