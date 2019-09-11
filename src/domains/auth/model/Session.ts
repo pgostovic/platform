@@ -7,16 +7,16 @@ export const AUTH_CODE_SESSION_EXPIRY = 10 * 60 * 1000; // 10 minutes
 export const CREDENTIALS_SESSION_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 class Session extends Model {
-  @field public readonly auxId: string;
   @field public readonly accountId: ModelId;
   @field public readonly token = uuid();
+  @field public auxId: string;
   @field public expiry: Date;
 
-  public constructor(auxId: string, accountId: ModelId, expiry: Date) {
+  public constructor(accountId: ModelId, expiry: Date, auxId: string) {
     super();
-    this.auxId = auxId;
     this.accountId = accountId;
     this.expiry = expiry;
+    this.auxId = auxId;
   }
 
   public get account(): Promise<Account> {

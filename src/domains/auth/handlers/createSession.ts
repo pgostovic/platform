@@ -11,11 +11,11 @@ const createSession: createSession = async ({ email, password }, connectionId?: 
 
   if (account && account.password && (await bcrypt.compare(password, account.password))) {
     const session = await new Session(
-      connectionId as string,
       account.id as string,
       new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY),
+      connectionId as string,
     ).save();
-    return { token: session.token };
+    return { token: session.token, authStatus: account.authStatus };
   }
   throw new Anomaly('Invalid Credentials');
 };

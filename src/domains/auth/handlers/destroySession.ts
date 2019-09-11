@@ -9,7 +9,7 @@ const destroySession: destroySession = async (_?: undefined, connectionId?: stri
   if (session) {
     session.expiry = new Date();
     await session.save();
-    return { destroyed: false };
+    return { destroyed: true };
   }
   throw new Anomaly('No current session');
 };

@@ -13,9 +13,15 @@ export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
-export type createSession = ({ email, password }: { email: string; password: string }) => Promise<{ token: string }>;
+export type createSession = ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => Promise<{ token: string; authStatus: AuthStatus }>;
 
-export type createSessionWithCode = ({ code }: { code: string }) => Promise<{ token: string }>;
+export type createSessionWithCode = ({ code }: { code: string }) => Promise<{ token: string; authStatus: AuthStatus }>;
 
 export type destroySession = () => Promise<{ destroyed: boolean }>;
 
