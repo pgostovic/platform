@@ -8,6 +8,7 @@ export interface AuthApi extends DomainServiceApi {
   createSessionWithCode: createSessionWithCode;
   destroySession: destroySession;
   setPassword: setPassword;
+  resetPassword: resetPassword;
 }
 
 export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>;
