@@ -20,7 +20,7 @@ const createAccount: createAccount = async ({ email }) => {
   };
   await account.save();
 
-  log('Created account with code: %s', account.authCode.code);
+  log('Auth code path: /code/%s', account.authCode.code);
 
   return account.authStatus;
 };

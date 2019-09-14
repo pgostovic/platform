@@ -2,6 +2,7 @@ import { AuthStatus, DomainServiceApi } from '../../types';
 
 export interface AuthApi extends DomainServiceApi {
   authenticate: authenticate;
+  authenticateConnection: authenticateConnection;
   createAccount: createAccount;
   createSession: createSession;
   createSessionWithCode: createSessionWithCode;
@@ -10,6 +11,8 @@ export interface AuthApi extends DomainServiceApi {
 }
 
 export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>;
+
+export type authenticateConnection = ({ connectionId }: { connectionId: string }) => Promise<{ valid: boolean }>;
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
@@ -26,3 +29,5 @@ export type createSessionWithCode = ({ code }: { code: string }) => Promise<{ to
 export type destroySession = () => Promise<{ destroyed: boolean }>;
 
 export type setPassword = ({ password }: { password: string }) => Promise<AuthStatus>;
+
+export type resetPassword = ({ email }: { email: string }) => Promise<{ requested: boolean }>;
