@@ -2,7 +2,6 @@ import { AuthStatus, DomainServiceApi } from '../../types';
 
 export interface AuthApi extends DomainServiceApi {
   authenticate: authenticate;
-  authenticateConnection: authenticateConnection;
   createAccount: createAccount;
   createSession: createSession;
   createSessionWithCode: createSessionWithCode;

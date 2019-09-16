@@ -1,5 +1,5 @@
-import DomainClient from './DomainClient';
-import AuthClient from './domains/auth/AuthClient';
+import AuthWSClient from './domains/auth/AuthWSClient';
+import DomainWSClient from './DomainWSClient';
 
-export { AuthClient, DomainClient };
+export { AuthWSClient, DomainWSClient };
 export * from './types';
