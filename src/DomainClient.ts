@@ -1,7 +1,6 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { MessageConnection, Value } from '@phnq/message';
-import { WebSocketMessageClient } from '@phnq/message/WebSocketMessageClient';
 import prettyHrtime from 'pretty-hrtime';
 
 import { ApiServiceMessage, DomainServiceApi } from './types';
@@ -44,14 +43,11 @@ export default abstract class DomainClient {
     return this.proxy;
   }
 
-  protected handle(type: string, data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> {
-    return (this.messageClient as WebSocketMessageClient<ApiServiceMessage>).request({
-      info: data,
-      type: `${this.domain}.${type}`,
-    });
-  }
-
   protected abstract async getMessageClient(): Promise<MessageConnection<ApiServiceMessage>>;
+
+  protected createRequestMessage(type: string, data: Value, connectionId?: string): ApiServiceMessage {
+    return { info: data, type: `${this.domain}.${type}`, connectionId };
+  }
 
   protected async initialize(): Promise<void> {
     const messageClient = await this.getMessageClient();
@@ -66,16 +62,18 @@ export default abstract class DomainClient {
       );
     });
     this.messageClient = messageClient;
-    const result = (await this.messageClient.requestOne({
-      type: `${this.domain}.handlers`,
-      info: {},
-    })) as { handlers: string[] };
+    const result = (await this.messageClient.requestOne(this.createRequestMessage('handlers', {}))) as {
+      handlers: string[];
+    };
 
     result.handlers.forEach((handler): void => {
       Object.defineProperty(this, handler, {
         enumerable: true,
-        value: (data: Value): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> =>
-          this.handle(handler, data),
+        value: (
+          data: Value,
+          connectionId?: string,
+        ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> =>
+          messageClient.request(this.createRequestMessage(handler, data, connectionId)),
         writable: false,
       });
     });
