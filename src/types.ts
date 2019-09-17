@@ -23,6 +23,5 @@ export type DomainServiceHandler = (
 ) => Promise<Value> | AsyncIterableIterator<Value>;
 
 export interface DomainServiceApi {
-  [key: string]: DomainServiceHandler;
   handlers(): Promise<{ domain: string; handlers: string[] }>;
 }
