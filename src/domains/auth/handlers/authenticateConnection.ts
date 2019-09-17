@@ -7,7 +7,7 @@ import Session from '../model/Session';
 const authenticateConnection: authenticateConnection = async ({ connectionId: auxId }) => {
   const session = await search(Session, { auxId }).first();
   if (session && session.expiry.getTime() > Date.now()) {
-    return { valid: session && session.expiry.getTime() > Date.now() };
+    return { valid: session && session.expiry.getTime() > Date.now(), accountId: session.accountId };
   }
   throw new Anomaly('Not Authenticated');
 };
