@@ -35,4 +35,8 @@ export default class DomainNATSClient extends DomainClient {
     const message = super.createRequestMessage(type, data, connectionId);
     return { ...message, origin: ORIGIN, connectionId };
   }
+
+  protected formatResponse(response: any): any {
+    return response.info;
+  }
 }
