@@ -121,16 +121,3 @@ export default abstract class DomainClient {
     this.q.length = 0;
   }
 }
-
-// const r = {
-//   data: {
-//     info: {
-//       domain: 'auth',
-//       handlers: [Array],
-//     },
-//     origin: '9647f9c284b74db282d6a10738bc7f17',
-//   },
-//   reqId: 1,
-//   source: { id: '76844468-df65-4fb9-9c50-4d6056fd743d' },
-//   type: 'response',
-// };
