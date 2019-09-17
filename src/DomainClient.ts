@@ -68,9 +68,9 @@ export default abstract class DomainClient {
 
     this.messageClient = messageClient;
 
-    const result = (await this.formatResponse(this.messageClient.requestOne(
-      this.createRequestMessage('handlers', {}),
-    ) as any)) as { handlers: string[] };
+    const result = this.formatResponse(
+      await (this.messageClient.requestOne(this.createRequestMessage('handlers', {})) as any),
+    ) as { handlers: string[] };
 
     const formatResponse = (r: any): any => this.formatResponse(r);
 
