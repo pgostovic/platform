@@ -93,7 +93,7 @@ export default abstract class DomainClient {
             return formatResponse(response) as ApiServiceMessage;
           }
         },
-        writable: false,
+        writable: true,
       });
     });
 
