@@ -18,6 +18,7 @@
         "allowTypedFunctionExpressions": true
       }
     ],
-    "simple-import-sort/sort": "error"
+    "simple-import-sort/sort": "error",
+    "@typescript-eslint/no-non-null-assertion": "off"
   }
 }

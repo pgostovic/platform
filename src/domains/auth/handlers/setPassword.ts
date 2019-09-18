@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Anomaly } from '@phnq/message';
 import { search } from '@phnq/model';
 import bcrypt from 'bcrypt';
