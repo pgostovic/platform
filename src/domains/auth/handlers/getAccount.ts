@@ -6,9 +6,8 @@ import { getAccount } from '../AuthApi';
 import Account from '../model/account';
 import authenticateConnection from './authenticateConnection';
 
-const getAccount: getAccount = async ({ accountId }, context?: DomainServiceHandlerContext) => {
-  await authenticateConnection(undefined, context);
-
+const getAccount: getAccount = async (_?, context?: DomainServiceHandlerContext) => {
+  const { accountId } = await authenticateConnection(undefined, context);
   const account = await find(Account, accountId);
   if (account) {
     return account;

@@ -25,7 +25,7 @@ export type authenticateConnection = (
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
-export type getAccount = ({ accountId }: { accountId: ModelId }) => Promise<Account>;
+export type getAccount = () => Promise<Account>;
 
 export type createSession = ({
   email,
