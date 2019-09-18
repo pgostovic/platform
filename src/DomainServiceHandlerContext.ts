@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import DomainClient from './DomainClient';
+import { DomainServiceApi } from './types';
 
 export default class DomainServiceHandlerContext {
   private connectionId: string;
 
-  public constructor(connectionId: string, clients: Map<string, DomainClient>) {
+  public constructor(connectionId: string, clients: Map<string, DomainServiceApi>) {
     this.connectionId = connectionId;
 
     for (const name of clients.keys()) {
