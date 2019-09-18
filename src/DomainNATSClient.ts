@@ -9,7 +9,10 @@ import { ApiServiceMessage, DomainServiceApi, DomainServiceMessage } from './typ
 const ORIGIN = uuid().replace(/[^\w]/g, '');
 
 export default class DomainNATSClient extends DomainClient {
-  public static create(natsConfig: NatsConnectionOptions, DomainClientClass = DomainNATSClient): DomainServiceApi {
+  protected static create(
+    natsConfig: NatsConnectionOptions,
+    DomainClientClass: typeof DomainNATSClient,
+  ): DomainServiceApi {
     const client = new DomainClientClass(natsConfig);
     client.initialize();
     return client.getProxy();

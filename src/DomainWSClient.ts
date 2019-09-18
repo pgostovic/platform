@@ -5,7 +5,7 @@ import DomainClient from './DomainClient';
 import { ApiServiceMessage, DomainServiceApi } from './types';
 
 export default class DomainWSClient extends DomainClient {
-  public static create(url: string, DomainClientClass = DomainWSClient): DomainServiceApi {
+  protected static create(url: string, DomainClientClass: typeof DomainWSClient): DomainServiceApi {
     const client = new DomainClientClass(url);
     client.initialize();
     return client.getProxy();
