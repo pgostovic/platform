@@ -6,6 +6,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
+import DomainNATSClient from './DomainNATSClient';
+import DomainServiceHandlerContext from './DomainServiceHandlerContext';
 import { DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';
@@ -37,6 +39,7 @@ export default abstract class DomainService {
   private natsClient?: NATSClient;
   private apiConnection?: MessageConnection<DomainServiceMessage>;
   private handlers = new Map<string, DomainServiceHandler>();
+  private clients = new Map<string, DomainNATSClient>();
 
   protected constructor(config: Config) {
     this.config = config;
@@ -68,6 +71,10 @@ export default abstract class DomainService {
     if (this.natsClient) {
       this.natsClient.close();
     }
+  }
+
+  protected addClient(name: string, client: DomainNATSClient): void {
+    this.clients.set(name, client);
   }
 
   private async scanForHandlers(): Promise<void> {
@@ -119,16 +126,16 @@ export default abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    const resp = await handler(info, connectionId);
+    const resp = await handler(info, new DomainServiceHandlerContext(connectionId, this.clients));
 
     if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
       return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
         for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-          yield { info: r as Value, origin };
+          yield { type: 'response', info: r as Value, origin, connectionId };
         }
       })();
     } else {
-      return { info: resp as Value, origin };
+      return { type: 'response', info: resp as Value, origin, connectionId };
     }
   };
 }

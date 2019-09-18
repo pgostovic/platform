@@ -1,5 +1,6 @@
 import { ModelId } from '@phnq/model';
 
+import DomainServiceHandlerContext from '../../DomainServiceHandlerContext';
 import { AuthStatus, DomainServiceApi } from '../../types';
 import Account from './model/account';
 
@@ -17,15 +18,14 @@ export interface AuthApi extends DomainServiceApi {
 
 export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>;
 
-export type authenticateConnection = ({
-  connectionId,
-}: {
-  connectionId: string;
-}) => Promise<{ valid: boolean; accountId: ModelId }>;
+export type authenticateConnection = (
+  _?: undefined,
+  context?: DomainServiceHandlerContext,
+) => Promise<{ valid: boolean; accountId: ModelId }>;
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
-export type getAccount = ({ accountId }: { accountId: ModelId }, connectionId?: string) => Promise<Account>;
+export type getAccount = ({ accountId }: { accountId: ModelId }) => Promise<Account>;
 
 export type createSession = ({
   email,

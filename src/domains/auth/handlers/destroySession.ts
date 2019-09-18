@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Anomaly } from '@phnq/message';
 import { search } from '@phnq/model';
 
+import DomainServiceHandlerContext from '../../../DomainServiceHandlerContext';
 import { destroySession } from '../AuthApi';
 import Session from '../model/Session';
 
-const destroySession: destroySession = async (_?: undefined, connectionId?: string) => {
-  const session = await search(Session, { auxId: connectionId }).first();
+const destroySession: destroySession = async (_?: undefined, context?: DomainServiceHandlerContext) => {
+  const session = await search(Session, { auxId: context!.getConnectionId() }).first();
   if (session) {
     session.expiry = new Date();
     await session.save();

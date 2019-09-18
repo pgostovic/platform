@@ -1,5 +1,7 @@
 import { Data, Value } from '@phnq/message';
 
+import DomainServiceHandlerContext from './DomainServiceHandlerContext';
+
 export interface AuthStatus extends Data {
   requirePasswordChange: boolean;
 }
@@ -10,16 +12,16 @@ export interface ApiServiceMessage extends Data {
 }
 
 export interface DomainServiceMessage extends Data {
-  type?: string;
+  type: string;
   info: Value;
   origin: string;
-  connectionId?: string;
+  connectionId: string;
 }
 
 export type DomainServiceHandler = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any,
-  connectionId?: string,
+  context?: DomainServiceHandlerContext,
 ) => Promise<Value> | AsyncIterableIterator<Value>;
 
 export interface DomainServiceApi {
