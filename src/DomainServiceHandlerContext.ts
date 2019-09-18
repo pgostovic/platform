@@ -11,7 +11,7 @@ export default class DomainServiceHandlerContext {
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
       const clientProxy = new Proxy(client, {
-        get: (target: any, key: any) => (...args: any[]) => target[key](...args, connectionId),
+        get: (target: any, key: any) => (params: any) => target[key](params, connectionId),
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
     }

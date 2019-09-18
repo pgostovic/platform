@@ -15,10 +15,9 @@
     "clean": "rimraf dist",
     "nats": "docker run -p 4222:4222 -ti nats:latest",
     "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
+    "build": "npm run build:api; npm run build:auth",
     "build:api": "npm run clean; npm run dist; cd dist; docker build -f ../build/api/Dockerfile -t=api .",
-    "api": "docker run -it --init -p 55555:80 --env NATS_SERVERS=$(ipconfig getifaddr en0) api",
     "build:auth": "npm run clean; npm run dist; cd dist; docker build -f ../build/auth/Dockerfile -t=auth .",
-    "auth": "docker run -it --init --env NATS_SERVERS=$(ipconfig getifaddr en0) --env MONGODB_URI=mongodb://$(ipconfig getifaddr en0):27017/authdemo auth",
     "test": "jest",
     "release:patch": "npm version patch; npm run dist; cd dist; npm publish",
     "release:minor": "npm version minor; npm run dist; cd dist; npm publish"
