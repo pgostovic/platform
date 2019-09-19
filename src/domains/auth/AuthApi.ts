@@ -1,4 +1,4 @@
-import { ModelId } from '@phnq/model';
+import { HasId, ModelId } from '@phnq/model';
 
 import DomainServiceHandlerContext from '../../DomainServiceHandlerContext';
 import { AuthStatus, DomainServiceApi } from '../../types';
@@ -25,7 +25,7 @@ export type authenticateConnection = (
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
-export type getAccount = () => Promise<Account>;
+export type getAccount = () => Promise<Account & HasId>;
 
 export type createSession = ({
   email,
