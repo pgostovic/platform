@@ -5,8 +5,6 @@ import prettyHrtime from 'pretty-hrtime';
 
 import { ApiServiceMessage, DomainServiceApi } from './types';
 
-const log = createLogger('DomainClient');
-
 interface QueuedCall {
   key: string;
   args: Value[];
@@ -16,6 +14,7 @@ interface QueuedCall {
 
 export default abstract class DomainClient {
   private domain: string;
+  private log: Logger;
   private messageClient?: MessageConnection<ApiServiceMessage>;
   private typesLoaded = false;
   private q: QueuedCall[] = [];
@@ -23,6 +22,7 @@ export default abstract class DomainClient {
 
   protected constructor(domain: string = 'domain') {
     this.domain = domain;
+    this.log = createLogger(`client.${domain}`);
     this.proxy = new Proxy(this, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       get: (target: any, key: string): any => {
@@ -56,7 +56,7 @@ export default abstract class DomainClient {
   protected async initialize(): Promise<void> {
     const messageClient = await this.getMessageClient();
     messageClient.onConversation((c): void => {
-      log.groupCollapsed(
+      this.log.groupCollapsed(
         `${(c.request.data as ApiServiceMessage).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
         (l: Logger): void => {
           c.responses.forEach((r): void => {
@@ -100,7 +100,7 @@ export default abstract class DomainClient {
     this.typesLoaded = true;
 
     if (this.q.length > 0) {
-      log('flushing message queue: ', this.q.map(({ key }: QueuedCall): string => key));
+      this.log('flushing message queue: ', this.q.map(({ key }: QueuedCall): string => key));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
