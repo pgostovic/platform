@@ -89,13 +89,12 @@ export default class ApiService {
       const token = cookie[authTokenCookie];
       if (token) {
         try {
-          const result = await this.onReceiveClientMessage(connectionId, {
+          await this.onReceiveClientMessage(connectionId, {
             type: 'auth.authenticate',
             info: { token },
           });
-          console.log('ON CONNECT AUTH', result);
         } catch (err) {
-          console.log('ON CONNECT AUTH ERROR', err);
+          log.warn('Failed authentication on connect with token: %s', token);
         }
       }
     }
