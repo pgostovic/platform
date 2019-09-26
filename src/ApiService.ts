@@ -7,6 +7,8 @@ import uuid from 'uuid/v4';
 
 import { ApiServiceMessage, DomainServiceMessage } from './types';
 
+const authTokenCookie = process.env.AUTH_TOKEN_COOKIE;
+
 const log = createLogger('ApiService');
 
 const ORIGIN = uuid().replace(/[^\w]/g, '');
@@ -34,6 +36,7 @@ export default class ApiService {
     this.messageServer = new WebSocketMessageServer<ApiServiceMessage>({
       httpServer: this.httpServer,
       onReceive: this.onReceiveClientMessage,
+      onConnect: this.onConnect,
     });
   }
 
@@ -80,6 +83,24 @@ export default class ApiService {
     log('Stopped.');
   }
 
+  private onConnect = async (connectionId: ConnectionId, req: http.IncomingMessage): Promise<void> => {
+    if (authTokenCookie) {
+      const cookie = getParsedCookie(req.headers.cookie || '');
+      const token = cookie[authTokenCookie];
+      if (token) {
+        try {
+          const result = await this.onReceiveClientMessage(connectionId, {
+            type: 'auth.authenticate',
+            info: { token },
+          });
+          console.log('ON CONNECT AUTH', result);
+        } catch (err) {
+          console.log('ON CONNECT AUTH ERROR', err);
+        }
+      }
+    }
+  };
+
   private onReceiveClientMessage = async (
     connectionId: ConnectionId,
     { type, info }: ApiServiceMessage,
@@ -102,3 +123,9 @@ export default class ApiService {
     }
   };
 }
+
+const getParsedCookie = (cookie: string): { [key: string]: string } =>
+  cookie
+    .split(/\s*;\s*/)
+    .map(c => c.split('='))
+    .reduce((o, t) => ({ ...o, [t[0]]: decodeURIComponent(t[1]) }), {});
