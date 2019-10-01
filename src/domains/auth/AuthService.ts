@@ -30,7 +30,7 @@ export default class AuthService extends DomainService {
     const auditLogger = new AuditLogger();
     addPersistObserver(auditLogger);
 
-    new AuthService(config).start();
+    await new AuthService(config).start();
   }
 
   private constructor(config: Config) {
