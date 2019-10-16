@@ -68,9 +68,32 @@ export default abstract class DomainClient {
 
     this.messageClient = messageClient;
 
-    const result = this.formatResponse(
-      await (this.messageClient.requestOne(this.createRequestMessage('handlers', {})) as any),
-    ) as { handlers: string[] };
+    const defaultTimeout = this.messageClient.responseTimeout;
+    // Set the timeout to a low value when getting handlers so it fails quickly.
+    this.messageClient.responseTimeout = 1000;
+
+    let result: { handlers: string[] } | undefined = undefined;
+
+    let numTries = 0;
+    while (!result) {
+      try {
+        result = this.formatResponse(
+          await (this.messageClient.requestOne(this.createRequestMessage('handlers', {})) as any),
+        ) as { handlers: string[] };
+      } catch (err) {
+        this.log('Error getting handlers:', err);
+        numTries++;
+        if (numTries > 5) {
+          this.log('Will try again in 10 seconds.');
+          await wait(10000);
+        } else {
+          this.log('Trying again.');
+        }
+      }
+    }
+
+    // Once we have the handlers, set the timeout back to the default.
+    this.messageClient.responseTimeout = defaultTimeout;
 
     const formatResponse = (r: any): any => this.formatResponse(r);
 
@@ -121,3 +144,8 @@ export default abstract class DomainClient {
     this.q.length = 0;
   }
 }
+
+const wait = (millis: number = 0): Promise<void> =>
+  new Promise((resolve): void => {
+    setTimeout(resolve, millis);
+  });
