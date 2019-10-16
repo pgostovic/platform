@@ -14,7 +14,7 @@
     "postdist": "ts-node scripts/postdist",
     "clean": "rimraf dist",
     "nats": "docker run -p 4222:4222 -ti nats:latest",
-    "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
+    "lint": "tsc --noEmit && eslint 'src/**/*.{js,ts,tsx}' --quiet --fix",
     "build": "npm run build:api; npm run build:auth",
     "build:api": "npm run clean; npm run dist; cd dist; docker build -f ../build/api/Dockerfile -t=api .",
     "build:auth": "npm run clean; npm run dist; cd dist; docker build -f ../build/auth/Dockerfile -t=auth .",
