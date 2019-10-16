@@ -55,7 +55,7 @@ export default class ApiService {
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
       subscriptions: [ORIGIN],
-      publishSubject: (message: Message<Value>): string => (message.data as DomainServiceMessage).type as string,
+      publishSubject: (message: Message<Value>): string => (message.payload as DomainServiceMessage).type as string,
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);

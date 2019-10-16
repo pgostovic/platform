@@ -29,7 +29,7 @@ export default class DomainNATSClient extends DomainClient {
     const natsClient = await connectNATS(this.natsConfig);
     const natsTransport = await NATSTransport.create(natsClient, {
       subscriptions: [ORIGIN],
-      publishSubject: (message: Message<Value>): string => (message.data as DomainServiceMessage).type as string,
+      publishSubject: (message: Message<Value>): string => (message.payload as DomainServiceMessage).type as string,
     });
     return new MessageConnection(natsTransport);
   }

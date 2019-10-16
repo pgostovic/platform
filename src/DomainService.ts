@@ -15,13 +15,13 @@ const mapPublishSubject = (message: Message<Value>): string => {
   switch (message.type) {
     case MessageType.Response:
     case MessageType.Multi:
-      return (message.data as DomainServiceMessage).origin;
+      return (message.payload as DomainServiceMessage).origin;
 
     case MessageType.Anomaly:
-      return ((message as AnomalyMessage).data.requestData as DomainServiceMessage).origin;
+      return ((message as AnomalyMessage).payload.requestPayload as DomainServiceMessage).origin;
 
     case MessageType.Error:
-      return ((message as ErrorMessage).data.requestData as DomainServiceMessage).origin;
+      return ((message as ErrorMessage).payload.requestPayload as DomainServiceMessage).origin;
   }
   throw new Error('Unable to derive publish subject');
 };
