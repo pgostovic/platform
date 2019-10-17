@@ -113,12 +113,13 @@ export default class ApiService {
       (serviceResponse as AsyncIterableIterator<Value>)[Symbol.asyncIterator]
     ) {
       return (async function*(): AsyncIterableIterator<ApiServiceMessage> {
-        for await (const resp of serviceResponse as AsyncIterableIterator<DomainServiceMessage>) {
-          yield (resp as DomainServiceMessage).info as ApiServiceMessage;
+        for await (const { type, info } of serviceResponse as AsyncIterableIterator<DomainServiceMessage>) {
+          yield { type, info };
         }
       })();
     } else {
-      return (serviceResponse as DomainServiceMessage).info as ApiServiceMessage;
+      const { type, info } = serviceResponse as DomainServiceMessage;
+      return { type, info };
     }
   };
 }

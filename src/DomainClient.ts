@@ -49,10 +49,6 @@ export default abstract class DomainClient {
     return { info: data, type: `${this.domain}.${type}`, connectionId };
   }
 
-  protected formatResponse(response: any): any {
-    return response;
-  }
-
   protected async initialize(): Promise<void> {
     const messageClient = await this.getMessageClient();
     messageClient.onConversation((c): void => {
@@ -77,9 +73,8 @@ export default abstract class DomainClient {
     let numTries = 0;
     while (!result) {
       try {
-        result = this.formatResponse(
-          await (this.messageClient.requestOne(this.createRequestMessage('handlers', {})) as any),
-        ) as { handlers: string[] };
+        const { info } = await this.messageClient.requestOne(this.createRequestMessage('handlers', {}));
+        result = info as { handlers: string[] };
       } catch (err) {
         this.log('Error getting handlers:', err);
         numTries++;
@@ -95,25 +90,23 @@ export default abstract class DomainClient {
     // Once we have the handlers, set the timeout back to the default.
     this.messageClient.responseTimeout = defaultTimeout;
 
-    const formatResponse = (r: any): any => this.formatResponse(r);
-
     result.handlers.forEach((handler): void => {
       Object.defineProperty(this, handler, {
         enumerable: true,
-        value: async (
-          data: Value,
-          connectionId?: string,
-        ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> => {
+        value: async (data: Value, connectionId?: string): Promise<Value | AsyncIterableIterator<Value>> => {
           const response = await messageClient.request(this.createRequestMessage(handler, data, connectionId));
 
-          if (typeof response === 'object' && (response as AsyncIterableIterator<Value>)[Symbol.asyncIterator]) {
-            return (async function*(): AsyncIterableIterator<ApiServiceMessage> {
+          if (
+            typeof response === 'object' &&
+            (response as AsyncIterableIterator<ApiServiceMessage>)[Symbol.asyncIterator]
+          ) {
+            return (async function*(): AsyncIterableIterator<Value> {
               for await (const resp of response as AsyncIterableIterator<ApiServiceMessage>) {
-                yield formatResponse(resp) as ApiServiceMessage;
+                yield resp.info;
               }
             })();
           } else {
-            return formatResponse(response) as ApiServiceMessage;
+            return (response as ApiServiceMessage).info;
           }
         },
         writable: true,
