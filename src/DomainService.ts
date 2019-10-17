@@ -12,16 +12,16 @@ import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './
 const HANDLERS = 'handlers';
 
 const mapPublishSubject = (message: Message<Value>): string => {
-  switch (message.type) {
+  switch (message.t) {
     case MessageType.Response:
     case MessageType.Multi:
-      return (message.payload as DomainServiceMessage).origin;
+      return (message.p as DomainServiceMessage).origin;
 
     case MessageType.Anomaly:
-      return ((message as AnomalyMessage).payload.requestPayload as DomainServiceMessage).origin;
+      return ((message as AnomalyMessage).p.requestPayload as DomainServiceMessage).origin;
 
     case MessageType.Error:
-      return ((message as ErrorMessage).payload.requestPayload as DomainServiceMessage).origin;
+      return ((message as ErrorMessage).p.requestPayload as DomainServiceMessage).origin;
   }
   throw new Error('Unable to derive publish subject');
 };

@@ -53,7 +53,7 @@ export default abstract class DomainClient {
     const messageClient = await this.getMessageClient();
     messageClient.onConversation((c): void => {
       this.log.groupCollapsed(
-        `${(c.request.payload as ApiServiceMessage).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
+        `${(c.request.p as ApiServiceMessage).type} (${prettyHrtime(c.responses.slice(-1)[0].time)})`,
         (l: Logger): void => {
           c.responses.forEach((r): void => {
             l('%s', prettyHrtime(r.time), r.message);
