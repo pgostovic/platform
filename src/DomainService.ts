@@ -76,6 +76,10 @@ export default abstract class DomainService {
     this.apiClients.set(name, client);
   }
 
+  protected getApiClients(): Map<string, DomainServiceApi> {
+    return this.apiClients;
+  }
+
   private async scanForHandlers(): Promise<void> {
     const { handlerPaths, domain } = this.config;
 
