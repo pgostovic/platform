@@ -15,7 +15,7 @@ export interface AuthApi extends DomainServiceApi {
   destroySession: destroySession;
   setPassword: setPassword;
   resetPassword: resetPassword;
-  notifyCurrentAccountSessions: notifyCurrentAccountSessions;
+  getActiveConnectionIds: getActiveConnectionIds;
 }
 
 export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>;
@@ -45,4 +45,4 @@ export type setPassword = ({ password }: { password: string }) => Promise<AuthSt
 
 export type resetPassword = ({ email }: { email: string }) => Promise<{ requested: boolean }>;
 
-export type notifyCurrentAccountSessions = ({ type, info }: { type: string; info: Value }) => Promise<void>;
+export type getActiveConnectionIds = ({ accountId }: { accountId?: ModelId }) => Promise<string[]>;

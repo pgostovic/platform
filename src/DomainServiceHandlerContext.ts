@@ -31,13 +31,15 @@ export default class DomainServiceHandlerContext {
     return this.connectionId;
   }
 
-  public notify(type: string, info: Value, connectionId?: string): void {
-    const message: DomainServiceMessage = {
-      type: `${this.domain}.${type}`,
-      info,
-      connectionId: connectionId || this.connectionId,
-      origin: '',
-    };
-    this.apiConnection.send(message);
+  public notify(type: string, info: Value, connectionIds?: string[]): void {
+    (connectionIds || [this.connectionId]).forEach(connectionId => {
+      const message: DomainServiceMessage = {
+        type: `${this.domain}.${type}`,
+        info,
+        connectionId,
+        origin: '',
+      };
+      this.apiConnection.send(message);
+    });
   }
 }
