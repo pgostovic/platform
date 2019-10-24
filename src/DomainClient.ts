@@ -77,7 +77,6 @@ export default abstract class DomainClient {
     this.messageClient.onReceive(async ({ type, info }) => {
       const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
       this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
-      return { type: 'ack', info: 'ack' };
     });
 
     const defaultTimeout = this.messageClient.responseTimeout;
