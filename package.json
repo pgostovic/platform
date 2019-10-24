@@ -19,8 +19,8 @@
     "build:api": "npm run clean; npm run dist; cd dist; docker build -f ../build/api/Dockerfile -t=api .",
     "build:auth": "npm run clean; npm run dist; cd dist; docker build -f ../build/auth/Dockerfile -t=auth .",
     "test": "jest",
-    "release:patch": "npm version patch; npm run dist; cd dist; npm publish",
-    "release:minor": "npm version minor; npm run dist; cd dist; npm publish"
+    "release:patch": "npm run clean; npm version patch; npm run dist; cd dist; npm publish",
+    "release:minor": "npm run clean; npm version minor; npm run dist; cd dist; npm publish"
   },
   "author": "Patrick Gostovic",
   "license": "ISC",
