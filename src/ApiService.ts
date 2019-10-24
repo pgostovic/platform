@@ -54,11 +54,18 @@ export default class ApiService {
     log('Connected to NATS.');
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
-      subscriptions: [ORIGIN],
+      subscriptions: [ORIGIN, 'notification'],
       publishSubject: (message: Message<Value>): string => (message.p as DomainServiceMessage).type as string,
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);
+    this.servicesConnection.onReceive(async ({ type, info, connectionId }) => {
+      const conn = this.messageServer.getConnection(connectionId);
+      if (conn) {
+        conn.send({ type, info });
+      }
+      return { type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' };
+    });
   }
 
   public async stop(): Promise<void> {

@@ -1,11 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DomainServiceApi } from './types';
+import { MessageConnection, Value } from '@phnq/message';
+
+import { DomainServiceApi, DomainServiceMessage } from './types';
 
 export default class DomainServiceHandlerContext {
+  private domain: string;
   private connectionId: string;
+  private apiConnection: MessageConnection<DomainServiceMessage>;
 
-  public constructor(connectionId: string, clients: Map<string, DomainServiceApi>) {
+  public constructor(
+    domain: string,
+    connectionId: string,
+    clients: Map<string, DomainServiceApi>,
+    apiConnection: MessageConnection<DomainServiceMessage>,
+  ) {
+    this.domain = domain;
     this.connectionId = connectionId;
+    this.apiConnection = apiConnection;
 
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
@@ -18,5 +29,15 @@ export default class DomainServiceHandlerContext {
 
   public getConnectionId(): string {
     return this.connectionId;
+  }
+
+  public notify(type: string, info: Value, connectionId?: string): void {
+    const message: DomainServiceMessage = {
+      type: `${this.domain}.${type}`,
+      info,
+      connectionId: connectionId || this.connectionId,
+      origin: '',
+    };
+    this.apiConnection.send(message);
   }
 }

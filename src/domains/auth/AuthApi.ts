@@ -1,3 +1,4 @@
+import { Value } from '@phnq/message';
 import { HasId, ModelId } from '@phnq/model';
 
 import DomainServiceHandlerContext from '../../DomainServiceHandlerContext';
@@ -14,6 +15,7 @@ export interface AuthApi extends DomainServiceApi {
   destroySession: destroySession;
   setPassword: setPassword;
   resetPassword: resetPassword;
+  notifyCurrentAccountSessions: notifyCurrentAccountSessions;
 }
 
 export type authenticate = ({ token }: { token: string }) => Promise<AuthStatus>;
@@ -42,3 +44,5 @@ export type destroySession = () => Promise<{ destroyed: boolean }>;
 export type setPassword = ({ password }: { password: string }) => Promise<AuthStatus>;
 
 export type resetPassword = ({ email }: { email: string }) => Promise<{ requested: boolean }>;
+
+export type notifyCurrentAccountSessions = ({ type, info }: { type: string; info: Value }) => Promise<void>;

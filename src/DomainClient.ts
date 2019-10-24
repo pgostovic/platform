@@ -12,6 +12,11 @@ interface QueuedCall {
   reject: (err: Error) => void;
 }
 
+interface NotficationHandlerEntry {
+  type: string;
+  handler: ({ type, info }: { type: string; info: Value }) => void;
+}
+
 export default abstract class DomainClient {
   private domain: string;
   private log: Logger;
@@ -19,6 +24,7 @@ export default abstract class DomainClient {
   private typesLoaded = false;
   private q: QueuedCall[] = [];
   private proxy: DomainServiceApi;
+  private notificationHandlers: NotficationHandlerEntry[] = [];
 
   protected constructor(domain: string = 'domain') {
     this.domain = domain;
@@ -37,6 +43,10 @@ export default abstract class DomainClient {
         );
       },
     });
+  }
+
+  public on(type: string, handler: ({ type, info }: { type: string; info: Value }) => void): void {
+    this.notificationHandlers.push({ type, handler });
   }
 
   protected getProxy(): DomainServiceApi {
@@ -63,6 +73,12 @@ export default abstract class DomainClient {
     });
 
     this.messageClient = messageClient;
+
+    this.messageClient.onReceive(async ({ type, info }) => {
+      const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
+      this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
+      return { type: 'ack', info: 'ack' };
+    });
 
     const defaultTimeout = this.messageClient.responseTimeout;
     // Set the timeout to a low value when getting handlers so it fails quickly.

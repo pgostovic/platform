@@ -13,6 +13,9 @@ const HANDLERS = 'handlers';
 
 const mapPublishSubject = (message: Message<Value>): string => {
   switch (message.t) {
+    case MessageType.Send:
+      return 'notification';
+
     case MessageType.Response:
     case MessageType.Multi:
       return (message.p as DomainServiceMessage).origin;
@@ -129,7 +132,10 @@ export default abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    const resp = await handler(info, new DomainServiceHandlerContext(connectionId, this.apiClients));
+    const resp = await handler(
+      info,
+      new DomainServiceHandlerContext(this.config.domain, connectionId, this.apiClients, this.apiConnection!),
+    );
 
     if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
       return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
