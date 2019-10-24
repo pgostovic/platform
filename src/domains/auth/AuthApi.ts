@@ -1,4 +1,3 @@
-import { Value } from '@phnq/message';
 import { HasId, ModelId } from '@phnq/model';
 
 import DomainServiceHandlerContext from '../../DomainServiceHandlerContext';
