@@ -53,6 +53,7 @@
     "bcrypt": "^3.0.6",
     "crypto-random-string": "^3.0.1",
     "pretty-hrtime": "^1.0.3",
+    "tedis": "^0.1.8",
     "uuid": "^3.3.3",
     "validator": "^11.1.0"
   }
