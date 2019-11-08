@@ -1,8 +1,11 @@
+import { createLogger } from '@phnq/log';
 import Agenda from 'agenda';
 import { promises as fs } from 'fs';
 import path from 'path';
 
 import { DomainServiceApi } from '../types';
+
+const log = createLogger('jobs');
 
 let agenda: Agenda | undefined = undefined;
 
@@ -20,6 +23,8 @@ export const initJobs = async ({ mongodbUri, apiClients, jobsPath }: Config): Pr
     clients[entry[0]] = entry[1];
   }
 
+  log('jobs path: %O', jobsPath);
+
   await Promise.all(
     [
       ...new Set(
@@ -28,10 +33,22 @@ export const initJobs = async ({ mongodbUri, apiClients, jobsPath }: Config): Pr
           .filter(name => name !== 'index'),
       ),
     ].map(async name => {
-      const jobFn = (await import(`./${name}`)).default;
-      agenda!.define(name, async job => {
-        jobFn(job.attrs.data, clients);
-      });
+      let relJobsPath = path.relative(__dirname, jobsPath);
+      if (relJobsPath[0] !== '.') {
+        relJobsPath = `./${relJobsPath}`;
+      }
+
+      try {
+        const jobFn = (await import(`${relJobsPath}/${name}`)).default;
+        agenda!.define(name, async job => {
+          jobFn(job.attrs.data, clients);
+        });
+        log('Registered job handler: %s', name);
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          log.warn('Not a valid handler: %s', `${relJobsPath}/${name}`);
+        }
+      }
     }),
   );
 
