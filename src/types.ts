@@ -19,8 +19,7 @@ export interface DomainServiceMessage extends Data {
 }
 
 export type DomainServiceHandler = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any,
+  params: unknown,
   context?: DomainServiceHandlerContext,
 ) => Promise<Value> | AsyncIterableIterator<Value>;
 

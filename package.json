@@ -50,6 +50,8 @@
     "@phnq/log": "^1.1.4",
     "@phnq/message": "^1.9.2",
     "@phnq/model": "^1.6.11",
+    "@types/agenda": "^2.0.6",
+    "agenda": "^2.1.0",
     "bcrypt": "^3.0.6",
     "crypto-random-string": "^3.0.1",
     "pretty-hrtime": "^1.0.3",
