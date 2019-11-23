@@ -7,7 +7,6 @@ import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
 import AuthNATSClient from './domains/auth/AuthNATSClient';
-import AuthService from './domains/auth/AuthService';
 import DomainServiceHandlerContext from './DomainServiceHandlerContext';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
@@ -50,8 +49,8 @@ export default abstract class DomainService {
     this.log = createLogger(config.domain);
 
     // AuthService comes for free
-    if (config.domain !== AuthService.domain) {
-      this.addApiClient(AuthService.domain, AuthNATSClient.create(config.natsConfig));
+    if (config.domain !== 'auth') {
+      this.addApiClient('auth', AuthNATSClient.create(config.natsConfig));
     }
   }
 
