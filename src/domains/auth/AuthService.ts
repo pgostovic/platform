@@ -18,6 +18,8 @@ interface Config {
 }
 
 export default class AuthService extends DomainService {
+  public static domain = 'auth';
+
   public static async start(config: Config): Promise<void> {
     const mongoDataStore = new MongoDataStore(config.mongodbUri);
 
@@ -39,6 +41,10 @@ export default class AuthService extends DomainService {
   }
 
   private constructor(config: Config) {
-    super({ domain: 'auth', handlerPaths: [path.resolve(__dirname, 'handlers')], natsConfig: config.natsConfig });
+    super({
+      domain: AuthService.domain,
+      handlerPaths: [path.resolve(__dirname, 'handlers')],
+      natsConfig: config.natsConfig,
+    });
   }
 }
