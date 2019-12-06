@@ -9,12 +9,16 @@ import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
 
 const createSession: createSession = async ({ email, password }, context?: DomainServiceHandlerContext) => {
   const account = await search(Account, { email }).first();
+  const connectionId = context!.getConnectionId();
+  if (!connectionId) {
+    throw new Anomaly('Invalid Context');
+  }
 
   if (account && account.password && (await bcrypt.compare(password, account.password))) {
     const session = await new Session(
       account.id as string,
       new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY),
-      context!.getConnectionId(),
+      connectionId,
     ).save();
     return { token: session.token, authStatus: account.authStatus };
   }

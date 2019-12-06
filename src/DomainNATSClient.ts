@@ -4,6 +4,7 @@ import { connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
 import DomainClient from './DomainClient';
+import { getCurrentJobDescription } from './jobs-new';
 import { ApiServiceMessage, DomainServiceApi, DomainServiceMessage } from './types';
 
 const ORIGIN = uuid().replace(/[^\w]/g, '');
@@ -36,6 +37,6 @@ export default class DomainNATSClient extends DomainClient {
 
   protected createRequestMessage(type: string, data: Value, connectionId?: string): ApiServiceMessage {
     const message = super.createRequestMessage(type, data, connectionId);
-    return { ...message, origin: ORIGIN, connectionId };
+    return { ...message, origin: ORIGIN, connectionId, job: getCurrentJobDescription() };
   }
 }

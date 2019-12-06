@@ -87,6 +87,7 @@ export default abstract class DomainClient {
 
     let result: { handlers: string[] } | undefined = undefined;
 
+    // Send a "handlers" message to get a list of handlers that the service supports
     let numTries = 0;
     while (!result) {
       try {
@@ -107,6 +108,7 @@ export default abstract class DomainClient {
     // Once we have the handlers, set the timeout back to the default.
     this.messageClient.responseTimeout = defaultTimeout;
 
+    // For each handler type, add a method with the same name.
     result.handlers.forEach((handler): void => {
       Object.defineProperty(this, handler, {
         enumerable: true,
@@ -133,7 +135,10 @@ export default abstract class DomainClient {
     this.typesLoaded = true;
 
     if (this.q.length > 0) {
-      this.log('flushing message queue: ', this.q.map(({ key }: QueuedCall): string => key));
+      this.log(
+        'flushing message queue: ',
+        this.q.map(({ key }: QueuedCall): string => key),
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

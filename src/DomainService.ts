@@ -2,12 +2,15 @@ import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType, Value } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
+import { ModelId } from '@phnq/model';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
+import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceHandlerContext from './DomainServiceHandlerContext';
+import Jobs from './jobs-new';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';
@@ -42,16 +45,23 @@ export default abstract class DomainService {
   private natsClient?: NATSClient;
   private apiConnection?: MessageConnection<DomainServiceMessage>;
   private handlers = new Map<string, DomainServiceHandler>();
+  private authClient: AuthApi;
   private apiClients = new Map<string, DomainServiceApi>();
+  private jobs = new Jobs(this);
 
   protected constructor(config: Config) {
     this.config = config;
     this.log = createLogger(config.domain);
+    this.authClient = AuthNATSClient.create(config.natsConfig);
 
     // AuthService comes for free
     if (config.domain !== 'auth') {
-      this.addApiClient('auth', AuthNATSClient.create(config.natsConfig));
+      this.addApiClient('auth', this.authClient);
     }
+  }
+
+  public getDomain(): string {
+    return this.config.domain;
   }
 
   public async start(): Promise<void> {
@@ -72,6 +82,8 @@ export default abstract class DomainService {
     this.apiConnection.onReceive(this.onReceive);
 
     await this.scanForHandlers();
+
+    await this.jobs.start();
   }
 
   public stop(): void {
@@ -81,12 +93,54 @@ export default abstract class DomainService {
     }
   }
 
+  public async executeJob(message: DomainServiceMessage, accountId: ModelId): Promise<void> {
+    const localType = this.toLocalType(message.type);
+    const handler = this.handlers.get(localType);
+    if (!handler) {
+      throw new Error(`handler type not supported: ${localType}`);
+    }
+
+    const context = new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, {
+      accountId,
+    });
+
+    const resp = await handler(message.info, context);
+
+    if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
+      for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
+        await context.notify(`jobResult.${message.type}`, r as Value, [accountId]);
+      }
+    } else {
+      await context.notify(`jobResult.${message.type}`, resp as Value, [accountId]);
+    }
+
+    // this.authClient.getActiveConnectionIds({ accountId });
+
+    // Conundrum: do I try to return a response if the connectionId is still active? Or is it better
+    // to just establish that jobs return nothing?
+    // Some options:
+    // 1. If the connectionId is active, then return the handler response to the connection as normal
+    //      - problem with this is the requestId that connects responses to requests is not available at this level of abstraction
+    //      - it's also a bit haphazard -- would only apply in short term jobs
+    // 2. Ignore the handler response, or log a warning if one is returned
+    //      - The handler could use context.notify() if needed
+    //      - not bad
+    // 3. Make the response meaningful -- job handler repsonse goes to all active connections for the account
+    //      - It would basically do as above in #2, but instead of explicitly having to call context.notify(),
+    //        the response would just be automaically sent to all active connections with some reasonable
+    //        type -- maybe something like jobResponse:${domain}.${type}
+  }
+
   protected addApiClient(name: string, client: DomainServiceApi): void {
     this.apiClients.set(name, client);
   }
 
   protected getApiClients(): Map<string, DomainServiceApi> {
     return this.apiClients;
+  }
+
+  private toLocalType(messageType: string): string {
+    return (messageType || '').replace(new RegExp(`^${this.config.domain}\.`), '');
   }
 
   private async scanForHandlers(): Promise<void> {
@@ -130,8 +184,14 @@ export default abstract class DomainService {
     info,
     connectionId,
     origin,
-  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> => {
-    const localType = (type || '').replace(new RegExp(`^${this.config.domain}\.`), '');
+    job,
+  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> => {
+    if (job) {
+      await this.jobs.schedule(job, { type, info, connectionId, origin }, await this.authClient.getAccount());
+      return;
+    }
+
+    const localType = this.toLocalType(type);
 
     const handler = this.handlers.get(localType);
     if (!handler) {
@@ -140,7 +200,7 @@ export default abstract class DomainService {
 
     const resp = await handler(
       info,
-      new DomainServiceHandlerContext(this.config.domain, connectionId, this.apiClients, this.apiConnection!),
+      new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, { connectionId }),
     );
 
     if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {

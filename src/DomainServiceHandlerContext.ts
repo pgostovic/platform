@@ -5,32 +5,38 @@ import { ModelId } from '@phnq/model';
 import { AuthApi } from './domains/auth/AuthApi';
 import { DomainServiceApi, DomainServiceMessage } from './types';
 
+type Identity = { connectionId: string; accountId?: ModelId } | { connectionId?: string; accountId: ModelId };
+
 export default class DomainServiceHandlerContext {
   private domain: string;
-  private connectionId: string;
   private apiConnection: MessageConnection<DomainServiceMessage>;
+  private identity: Identity;
 
   public constructor(
     domain: string,
-    connectionId: string,
     clients: Map<string, DomainServiceApi>,
     apiConnection: MessageConnection<DomainServiceMessage>,
+    identity: Identity,
   ) {
     this.domain = domain;
-    this.connectionId = connectionId;
     this.apiConnection = apiConnection;
+    this.identity = identity;
 
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
       const clientProxy = new Proxy(client, {
-        get: (target: any, key: any) => (params: any) => target[key](params, connectionId),
+        get: (target: any, key: any) => (params: any) => target[key](params, this.identity.connectionId),
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
     }
   }
 
-  public getConnectionId(): string {
-    return this.connectionId;
+  public getConnectionId(): string | undefined {
+    return this.identity.connectionId;
+  }
+
+  public getAccountId(): ModelId | undefined {
+    return this.identity.accountId;
   }
 
   /**

@@ -11,11 +11,16 @@ export interface ApiServiceMessage extends Data {
   info: Value;
 }
 
+export interface JobDescripton extends Data {
+  runTime: Date;
+}
+
 export interface DomainServiceMessage extends Data {
   type: string;
   info: Value;
   origin: string;
   connectionId: string;
+  job?: JobDescripton;
 }
 
 export type DomainServiceHandler = (
