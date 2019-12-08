@@ -59,7 +59,7 @@ export const runAsJob = (
   jobDesc: JobDescripton = { runTime: new Date() },
 ): void => {
   jobsContext.set('currentJobDescription', jobDesc);
-  fn(params);
+  jobsContext.bind(fn)(params);
   jobsContext.set('currentJobDescription', undefined);
 };
 
