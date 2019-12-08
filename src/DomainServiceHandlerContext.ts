@@ -3,7 +3,7 @@ import { MessageConnection, Value } from '@phnq/message';
 import { ModelId } from '@phnq/model';
 
 import { AuthApi } from './domains/auth/AuthApi';
-import { DomainServiceApi, DomainServiceMessage } from './types';
+import { DomainServiceApi, DomainServiceMessage, JobDescripton } from './types';
 
 type Identity = { connectionId: string; accountId?: ModelId } | { connectionId?: string; accountId: ModelId };
 
@@ -24,10 +24,17 @@ export default class DomainServiceHandlerContext {
 
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
+
       const clientProxy = new Proxy(client, {
         get: (target: any, key: any) => (params: any) => target[key](params, this.identity.connectionId),
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
+
+      const clientJobsProxy = new Proxy(client, {
+        get: (target: any, key: any) => (params: any, job: JobDescripton = { runTime: new Date() }) =>
+          target[key](params, this.identity.connectionId, job),
+      });
+      Object.defineProperty(this, `${name}Jobs`, { value: clientJobsProxy, writable: true, enumerable: false });
     }
   }
 

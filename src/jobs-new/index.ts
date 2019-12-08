@@ -1,6 +1,5 @@
 import { createLogger } from '@phnq/log';
 import { HasId } from '@phnq/model';
-import { createNamespace } from 'cls-hooked';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
@@ -48,21 +47,5 @@ class Jobs {
     log('Scheduled job %s -- %s', domainMessage.type, job.id);
   }
 }
-
-// await this.jobs.schedule({ localType, info, origin, accountId: account.id, connectionId }, job);
-
-const jobsContext = createNamespace('jobs');
-
-export const runAsJob = (
-  fn: (p: any) => void,
-  params: unknown,
-  jobDesc: JobDescripton = { runTime: new Date() },
-): void => {
-  jobsContext.set('currentJobDescription', jobDesc);
-  jobsContext.bind(fn)(params);
-  jobsContext.set('currentJobDescription', undefined);
-};
-
-export const getCurrentJobDescription = (): JobDescripton => jobsContext.get('currentJobDescription');
 
 export default Jobs;
