@@ -7,10 +7,16 @@ import { DomainServiceApi, DomainServiceMessage, JobDescripton } from './types';
 
 type Identity = { connectionId: string; accountId?: ModelId } | { connectionId?: string; accountId: ModelId };
 
-export default class DomainServiceHandlerContext {
+interface WithAuthApi {
+  auth: AuthApi;
+}
+
+export default class DomainServiceHandlerContext implements WithAuthApi {
   private domain: string;
   private apiConnection: MessageConnection<DomainServiceMessage>;
   private identity: Identity;
+  // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+  public auth: AuthApi = {} as AuthApi;
 
   public constructor(
     domain: string,

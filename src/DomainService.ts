@@ -186,8 +186,12 @@ export default abstract class DomainService {
     origin,
     job,
   }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> => {
+    const context = new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, {
+      connectionId,
+    });
+
     if (job) {
-      await this.jobs.schedule(job, { type, info, connectionId, origin }, await this.authClient.getAccount());
+      await this.jobs.schedule(job, { type, info, connectionId, origin }, await context.auth.getAccount());
       return;
     }
 
@@ -198,10 +202,7 @@ export default abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    const resp = await handler(
-      info,
-      new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, { connectionId }),
-    );
+    const resp = await handler(info, context);
 
     if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
       return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
