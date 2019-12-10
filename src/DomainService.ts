@@ -100,19 +100,26 @@ export default abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    const context = new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, {
-      accountId,
-    });
+    DomainServiceHandlerContext.set(
+      {
+        domain: this.config.domain,
+        clients: this.apiClients,
+        apiConnection: this.apiConnection!,
+        identity: { accountId },
+      },
+      async () => {
+        const context = DomainServiceHandlerContext.get();
+        const resp = await handler(message.info, context);
 
-    const resp = await handler(message.info, context);
-
-    if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
-      for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-        await context.notify(`jobResult.${message.type}`, r as Value, [accountId]);
-      }
-    } else {
-      await context.notify(`jobResult.${message.type}`, resp as Value, [accountId]);
-    }
+        if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
+          for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
+            await context.notify(`jobResult.${message.type}`, r as Value, [accountId]);
+          }
+        } else {
+          await context.notify(`jobResult.${message.type}`, resp as Value, [accountId]);
+        }
+      },
+    );
 
     // this.authClient.getActiveConnectionIds({ accountId });
 
@@ -185,33 +192,40 @@ export default abstract class DomainService {
     connectionId,
     origin,
     job,
-  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> => {
-    const context = new DomainServiceHandlerContext(this.config.domain, this.apiClients, this.apiConnection!, {
-      connectionId,
-    });
+  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> =>
+    DomainServiceHandlerContext.set(
+      {
+        domain: this.config.domain,
+        clients: this.apiClients,
+        apiConnection: this.apiConnection!,
+        identity: { connectionId },
+      },
+      async () => {
+        const context = DomainServiceHandlerContext.get();
 
-    if (job) {
-      await this.jobs.schedule(job, { type, info, connectionId, origin }, await context.auth.getAccount());
-      return;
-    }
-
-    const localType = this.toLocalType(type);
-
-    const handler = this.handlers.get(localType);
-    if (!handler) {
-      throw new Error(`handler type not supported: ${localType}`);
-    }
-
-    const resp = await handler(info, context);
-
-    if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
-      return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
-        for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-          yield { type: 'response', info: r as Value, origin, connectionId };
+        if (job) {
+          await this.jobs.schedule(job, { type, info, connectionId, origin }, await context.auth.getAccount());
+          return;
         }
-      })();
-    } else {
-      return { type: 'response', info: resp as Value, origin, connectionId };
-    }
-  };
+
+        const localType = this.toLocalType(type);
+
+        const handler = this.handlers.get(localType);
+        if (!handler) {
+          throw new Error(`handler type not supported: ${localType}`);
+        }
+
+        const resp = await handler(info, context);
+
+        if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
+          return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
+            for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
+              yield { type: 'response', info: r as Value, origin, connectionId };
+            }
+          })();
+        } else {
+          return { type: 'response', info: resp as Value, origin, connectionId };
+        }
+      },
+    );
 }
