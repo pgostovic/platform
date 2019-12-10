@@ -2,14 +2,15 @@ import { Anomaly } from '@phnq/message';
 import { search } from '@phnq/model';
 import bcrypt from 'bcrypt';
 
-import DomainServiceHandlerContext from '../../../DomainServiceHandlerContext';
+import DomainServiceContext from '../../../DomainServiceContext';
 import { createSession } from '../AuthApi';
 import Account from '../model/account';
 import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
 
-const createSession: createSession = async ({ email, password }, context?: DomainServiceHandlerContext) => {
+const createSession: createSession = async ({ email, password }) => {
+  const context = DomainServiceContext.get();
   const account = await search(Account, { email }).first();
-  const connectionId = context!.getConnectionId();
+  const connectionId = context.getConnectionId();
   if (!connectionId) {
     throw new Anomaly('Invalid Context');
   }

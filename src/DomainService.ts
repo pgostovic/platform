@@ -9,7 +9,7 @@ import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } f
 
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
-import DomainServiceHandlerContext from './DomainServiceHandlerContext';
+import DomainServiceContext from './DomainServiceContext';
 import Jobs from './jobs-new';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
@@ -100,7 +100,7 @@ export default abstract class DomainService {
       throw new Error(`handler type not supported: ${localType}`);
     }
 
-    DomainServiceHandlerContext.set(
+    DomainServiceContext.set(
       {
         domain: this.config.domain,
         clients: this.apiClients,
@@ -108,8 +108,8 @@ export default abstract class DomainService {
         identity: { accountId },
       },
       async () => {
-        const context = DomainServiceHandlerContext.get();
-        const resp = await handler(message.info, context);
+        const context = DomainServiceContext.get();
+        const resp = await handler(message.info);
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
@@ -193,7 +193,7 @@ export default abstract class DomainService {
     origin,
     job,
   }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> =>
-    DomainServiceHandlerContext.set(
+    DomainServiceContext.set(
       {
         domain: this.config.domain,
         clients: this.apiClients,
@@ -201,7 +201,7 @@ export default abstract class DomainService {
         identity: { connectionId },
       },
       async () => {
-        const context = DomainServiceHandlerContext.get();
+        const context = DomainServiceContext.get();
 
         if (job) {
           await this.jobs.schedule(job, { type, info, connectionId, origin }, await context.auth.getAccount());
@@ -215,7 +215,7 @@ export default abstract class DomainService {
           throw new Error(`handler type not supported: ${localType}`);
         }
 
-        const resp = await handler(info, context);
+        const resp = await handler(info);
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           return (async function*(): AsyncIterableIterator<DomainServiceMessage> {

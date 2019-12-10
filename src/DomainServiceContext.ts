@@ -6,7 +6,7 @@ import { createNamespace } from 'cls-hooked';
 import { AuthApi } from './domains/auth/AuthApi';
 import { DomainServiceApi, DomainServiceMessage, JobDescripton } from './types';
 
-const contextNS = createNamespace('DomainServiceHandlerContext');
+const contextNS = createNamespace('DomainServiceContext');
 
 type Identity = { connectionId: string; accountId?: ModelId } | { connectionId?: string; accountId: ModelId };
 
@@ -21,16 +21,16 @@ interface Params {
   identity: Identity;
 }
 
-export default class DomainServiceHandlerContext implements WithAuthApi {
+export default class DomainServiceContext implements WithAuthApi {
   public static set<T = unknown>({ domain, clients, apiConnection, identity }: Params, fn: () => T): T {
-    const context = new DomainServiceHandlerContext(domain, clients, apiConnection, identity);
+    const context = new DomainServiceContext(domain, clients, apiConnection, identity);
     return contextNS.runAndReturn(() => {
       contextNS.set('currentContext', context);
       return fn();
     });
   }
 
-  public static get(): DomainServiceHandlerContext {
+  public static get<T>(): T & DomainServiceContext {
     return contextNS.get('currentContext');
   }
 

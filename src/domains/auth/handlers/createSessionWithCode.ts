@@ -1,14 +1,15 @@
 import { Anomaly } from '@phnq/message';
 import { search } from '@phnq/model';
 
-import DomainServiceHandlerContext from '../../../DomainServiceHandlerContext';
+import DomainServiceContext from '../../../DomainServiceContext';
 import { createSessionWithCode } from '../AuthApi';
 import Account from '../model/account';
 import Session, { AUTH_CODE_SESSION_EXPIRY } from '../model/Session';
 
-const createSession: createSessionWithCode = async ({ code }, context?: DomainServiceHandlerContext) => {
+const createSession: createSessionWithCode = async ({ code }) => {
+  const context = DomainServiceContext.get();
   const account = await search(Account, { 'authCode.code': code }).first();
-  const connectionId = context!.getConnectionId();
+  const connectionId = context.getConnectionId();
   if (!connectionId) {
     throw new Anomaly('Invalid Context');
   }

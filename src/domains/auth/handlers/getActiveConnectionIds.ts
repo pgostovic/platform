@@ -1,15 +1,14 @@
 import { search } from '@phnq/model';
 
-import DomainServiceHandlerContext from '../../../DomainServiceHandlerContext';
 import { getActiveConnectionIds } from '../AuthApi';
 import Session from '../model/Session';
 import authenticateConnection from './authenticateConnection';
 
 // TODO: This should only be callable from within backend -- i.e. should not be able to call this from client
-const getActiveConnectionIds: getActiveConnectionIds = async ({ accountId }, context?: DomainServiceHandlerContext) => {
+const getActiveConnectionIds: getActiveConnectionIds = async ({ accountId }) => {
   let acctId = accountId;
   if (!acctId) {
-    const { accountId: currentAccountId } = await authenticateConnection(undefined, context);
+    const { accountId: currentAccountId } = await authenticateConnection();
     acctId = currentAccountId;
   }
 
