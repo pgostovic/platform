@@ -6,7 +6,7 @@ const authenticate = <T = unknown>(fn: T): T =>
   ((async (params: unknown) => {
     const handler = (fn as unknown) as Handler;
     const context = DomainServiceContext.get();
-    await context.auth.authenticateConnection();
+    await context.authenticateConnection();
     return handler(params);
   }) as unknown) as T;
 

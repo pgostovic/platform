@@ -38,7 +38,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
   private readonly service: DomainService;
   private readonly apiConnection: MessageConnection<DomainServiceMessage>;
-  private readonly identity: Identity;
+  private identity: Identity;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
 
@@ -77,6 +77,11 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
   public getAccountId(): ModelId | undefined {
     return this.identity.accountId;
+  }
+
+  public async authenticateConnection(): Promise<void> {
+    const { accountId } = await this.auth.authenticateConnection();
+    this.identity.accountId = accountId;
   }
 
   /**
