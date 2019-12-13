@@ -36,9 +36,9 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     return contextNS.get('currentContext');
   }
 
-  private service: DomainService;
-  private apiConnection: MessageConnection<DomainServiceMessage>;
-  private identity: Identity;
+  private readonly service: DomainService;
+  private readonly apiConnection: MessageConnection<DomainServiceMessage>;
+  private readonly identity: Identity;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
 
