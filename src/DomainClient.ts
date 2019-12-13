@@ -3,7 +3,7 @@ import { Logger } from '@phnq/log/logger';
 import { MessageConnection, Value } from '@phnq/message';
 import prettyHrtime from 'pretty-hrtime';
 
-import { ApiServiceMessage, DomainServiceApi, JobDescripton } from './types';
+import { ApiServiceMessage, DomainServiceApi } from './types';
 
 interface QueuedCall {
   key: string;
@@ -55,13 +55,8 @@ export default abstract class DomainClient {
 
   protected abstract async getMessageClient(): Promise<MessageConnection<ApiServiceMessage>>;
 
-  protected createRequestMessage(
-    type: string,
-    data: Value,
-    connectionId?: string,
-    job?: JobDescripton,
-  ): ApiServiceMessage {
-    return { info: data, type: `${this.domain}.${type}`, connectionId, job };
+  protected createRequestMessage(type: string, data: Value, connectionId?: string): ApiServiceMessage {
+    return { info: data, type: `${this.domain}.${type}`, connectionId };
   }
 
   protected async initialize(): Promise<void> {
@@ -117,12 +112,8 @@ export default abstract class DomainClient {
     result.handlers.forEach((handler): void => {
       Object.defineProperty(this, handler, {
         enumerable: true,
-        value: async (
-          data: Value,
-          connectionId?: string,
-          job?: JobDescripton,
-        ): Promise<Value | AsyncIterableIterator<Value>> => {
-          const response = await messageClient.request(this.createRequestMessage(handler, data, connectionId, job));
+        value: async (data: Value, connectionId?: string): Promise<Value | AsyncIterableIterator<Value>> => {
+          const response = await messageClient.request(this.createRequestMessage(handler, data, connectionId));
 
           if (
             typeof response === 'object' &&

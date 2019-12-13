@@ -8,14 +8,16 @@ class Job extends Model {
   }
 
   @field public readonly accountId: ModelId;
-  @field public readonly data: Value;
+  @field public readonly type: string;
+  @field public readonly info: Value;
   @field public nextRunTime: Date;
   @field public lastRunTime?: Date;
 
-  public constructor(accountId: ModelId, data: Value, nextRunTime: Date) {
+  public constructor(accountId: ModelId, type: string, info: Value, nextRunTime: Date) {
     super();
     this.accountId = accountId;
-    this.data = data;
+    this.type = type;
+    this.info = info;
     this.nextRunTime = nextRunTime;
   }
 }

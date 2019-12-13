@@ -4,7 +4,9 @@ import { ModelId } from '@phnq/model';
 import { createNamespace } from 'cls-hooked';
 
 import { AuthApi } from './domains/auth/AuthApi';
-import { DomainServiceApi, DomainServiceMessage, JobDescripton } from './types';
+import DomainService from './DomainService';
+import { JobDescripton } from './jobs-new';
+import { DomainServiceApi, DomainServiceMessage } from './types';
 
 const contextNS = createNamespace('DomainServiceContext');
 
@@ -15,38 +17,39 @@ interface WithAuthApi {
 }
 
 interface Params {
-  domain: string;
+  service: DomainService;
   clients: Map<string, DomainServiceApi>;
   apiConnection: MessageConnection<DomainServiceMessage>;
   identity: Identity;
 }
 
-export default class DomainServiceContext implements WithAuthApi {
-  public static set<T = unknown>({ domain, clients, apiConnection, identity }: Params, fn: () => T): T {
-    const context = new DomainServiceContext(domain, clients, apiConnection, identity);
+export default class DomainServiceContext<T = unknown> implements WithAuthApi {
+  public static set<T = unknown>({ service, clients, apiConnection, identity }: Params, fn: () => T): T {
+    const context = new DomainServiceContext(service, clients, apiConnection, identity);
     return contextNS.runAndReturn(() => {
       contextNS.set('currentContext', context);
       return fn();
     });
   }
 
-  public static get<T>(): T & DomainServiceContext {
+  public static get<T, C = {}>(): DomainServiceContext<T> & C {
     return contextNS.get('currentContext');
   }
 
-  private domain: string;
+  private service: DomainService;
+  public readonly jobs: T;
   private apiConnection: MessageConnection<DomainServiceMessage>;
   private identity: Identity;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
 
   private constructor(
-    domain: string,
+    service: DomainService,
     clients: Map<string, DomainServiceApi>,
     apiConnection: MessageConnection<DomainServiceMessage>,
     identity: Identity,
   ) {
-    this.domain = domain;
+    this.service = service;
     this.apiConnection = apiConnection;
     this.identity = identity;
 
@@ -57,13 +60,15 @@ export default class DomainServiceContext implements WithAuthApi {
         get: (target: any, key: any) => (params: any) => target[key](params, this.identity.connectionId),
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
-
-      const clientJobsProxy = new Proxy(client, {
-        get: (target: any, key: any) => (params: any, job: JobDescripton = { runTime: new Date() }) =>
-          target[key](params, this.identity.connectionId, job),
-      });
-      Object.defineProperty(this, `${name}Jobs`, { value: clientJobsProxy, writable: true, enumerable: false });
     }
+
+    this.jobs = new Proxy(
+      {},
+      {
+        get: (_: any, type: string) => (params: Value, jobDesc: JobDescripton) =>
+          this.service.scheduleJob(jobDesc, type, params),
+      },
+    );
   }
 
   public getConnectionId(): string | undefined {
@@ -93,7 +98,7 @@ export default class DomainServiceContext implements WithAuthApi {
       await Promise.all(
         connectionIds.map(connectionId =>
           this.apiConnection.send({
-            type: `${this.domain}.${type}`,
+            type: `${this.service.getDomain()}.${type}`,
             info,
             connectionId,
             origin: '',

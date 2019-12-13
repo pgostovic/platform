@@ -1,12 +1,16 @@
 import { createLogger } from '@phnq/log';
-import { HasId } from '@phnq/model';
+import { Value } from '@phnq/message';
+import { Data, HasId } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
-import { DomainServiceMessage, JobDescripton } from '../types';
 import Job from './Job';
 
 const log = createLogger('jobs');
+
+export interface JobDescripton extends Data {
+  runTime: Date;
+}
 
 class Jobs {
   private service: DomainService;
@@ -29,7 +33,7 @@ class Jobs {
       log('Find jobs to run...');
       for await (const job of Job.jobsReadyToRun().iterator) {
         log('Running job: %s', job.id);
-        await this.service.executeJob(job.data as DomainServiceMessage, job.accountId);
+        await this.service.executeJob(job.type, job.info, job.accountId);
         job.lastRunTime = new Date();
         await job.save();
         log('Finished job: %s', job.id);
@@ -37,14 +41,10 @@ class Jobs {
     }, 10000);
   }
 
-  public async schedule(
-    jobDesc: JobDescripton,
-    domainMessage: DomainServiceMessage,
-    account: Account & HasId,
-  ): Promise<void> {
-    const job = new Job(account.id, domainMessage, jobDesc.runTime);
+  public async schedule(jobDesc: JobDescripton, type: string, info: Value, account: Account & HasId): Promise<void> {
+    const job = new Job(account.id, type, info, jobDesc.runTime);
     await job.save();
-    log('Scheduled job %s -- %s', domainMessage.type, job.id);
+    log('Scheduled job %s -- %s', type, job.id);
   }
 }
 

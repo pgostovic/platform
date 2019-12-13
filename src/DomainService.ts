@@ -10,7 +10,7 @@ import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } f
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
-import Jobs from './jobs-new';
+import Jobs, { JobDescripton } from './jobs-new';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';
@@ -93,8 +93,21 @@ export default abstract class DomainService {
     }
   }
 
-  public async executeJob(message: DomainServiceMessage, accountId: ModelId): Promise<void> {
-    const localType = this.toLocalType(message.type);
+  public getHandlerTypes(): string[] {
+    return [...this.handlers.keys()];
+  }
+
+  public async scheduleJob(jobDesc: JobDescripton, type: string, info: Value): Promise<void> {
+    await this.jobs.schedule(
+      jobDesc,
+      `${this.config.domain}.${type}`,
+      info,
+      await DomainServiceContext.get().auth.getAccount(),
+    );
+  }
+
+  public async executeJob(type: string, info: Value, accountId: ModelId): Promise<void> {
+    const localType = this.toLocalType(type);
     const handler = this.handlers.get(localType);
     if (!handler) {
       throw new Error(`handler type not supported: ${localType}`);
@@ -102,21 +115,21 @@ export default abstract class DomainService {
 
     DomainServiceContext.set(
       {
-        domain: this.config.domain,
+        service: this,
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
         identity: { accountId },
       },
       async () => {
         const context = DomainServiceContext.get();
-        const resp = await handler(message.info);
+        const resp = await handler(info);
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-            await context.notify(`jobResult.${message.type}`, r as Value, [accountId]);
+            await context.notify(`jobResult.${type}`, r as Value, [accountId]);
           }
         } else {
-          await context.notify(`jobResult.${message.type}`, resp as Value, [accountId]);
+          await context.notify(`jobResult.${type}`, resp as Value, [accountId]);
         }
       },
     );
@@ -191,23 +204,15 @@ export default abstract class DomainService {
     info,
     connectionId,
     origin,
-    job,
-  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage> | void> =>
+  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> =>
     DomainServiceContext.set(
       {
-        domain: this.config.domain,
+        service: this,
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
         identity: { connectionId },
       },
       async () => {
-        const context = DomainServiceContext.get();
-
-        if (job) {
-          await this.jobs.schedule(job, { type, info, connectionId, origin }, await context.auth.getAccount());
-          return;
-        }
-
         const localType = this.toLocalType(type);
 
         const handler = this.handlers.get(localType);
