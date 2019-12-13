@@ -37,7 +37,6 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   }
 
   private service: DomainService;
-  public readonly jobs: T;
   private apiConnection: MessageConnection<DomainServiceMessage>;
   private identity: Identity;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
@@ -61,12 +60,13 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
     }
+  }
 
-    this.jobs = new Proxy(
+  public asJob(jobDesc: JobDescripton = { runTime: new Date() }): T {
+    return new Proxy(
       {},
       {
-        get: (_: any, type: string) => (params: Value, jobDesc: JobDescripton) =>
-          this.service.scheduleJob(jobDesc, type, params),
+        get: (_: any, type: string) => (params: Value) => this.service.scheduleJob(jobDesc, type, params),
       },
     );
   }
