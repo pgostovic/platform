@@ -10,7 +10,7 @@ import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } f
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
-import Jobs, { JobDescripton } from './jobs-new';
+import Jobs, { JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';

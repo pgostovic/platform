@@ -1,64 +1,51 @@
 import { createLogger } from '@phnq/log';
-import Agenda from 'agenda';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { Value } from '@phnq/message';
+import { Data, HasId } from '@phnq/model';
 
-import { DomainServiceApi } from '../types';
+import Account from '../domains/auth/model/account';
+import DomainService from '../DomainService';
+import Job from './Job';
 
 const log = createLogger('jobs');
 
-let agenda: Agenda | undefined = undefined;
-
-interface Config {
-  mongodbUri: string;
-  jobsPath: string;
-  apiClients: Map<string, DomainServiceApi>;
+export interface JobDescripton extends Data {
+  runTime: Date;
 }
 
-export const initJobs = async ({ mongodbUri, apiClients, jobsPath }: Config): Promise<void> => {
-  agenda = new Agenda({ db: { address: mongodbUri, collection: 'jobs' } });
+class Jobs {
+  private service: DomainService;
 
-  const clients: { [key: string]: DomainServiceApi } = {};
-  for (const entry of apiClients.entries()) {
-    clients[entry[0]] = entry[1];
+  public constructor(service: DomainService) {
+    this.service = service;
   }
 
-  log('jobs path: %O', jobsPath);
+  public async start(): Promise<void> {
+    log('Starting jobs for service %s', this.service.getDomain());
 
-  await Promise.all(
-    [
-      ...new Set(
-        (await fs.readdir(jobsPath))
-          .map((name): string => path.basename(name).replace(/\.(d\.ts|js|ts)$/, ''))
-          .filter(name => name !== 'index'),
-      ),
-    ].map(async name => {
-      let relJobsPath = path.relative(__dirname, jobsPath);
-      if (relJobsPath[0] !== '.') {
-        relJobsPath = `./${relJobsPath}`;
+    // start some prcocess to query for upcoming jobs and run them
+    // - grab a job and lock it so it's not run multiple times
+    // - update job's status for the various states - i.e. started, failed, succeeded, etc.
+    // - save the time the job ran at.
+    // - call this.service.executeJobWithData() to actually run the job
+    // console.log('start', this.service);
+
+    setInterval(async () => {
+      log('Find jobs to run...');
+      for await (const job of Job.jobsReadyToRun().iterator) {
+        log('Running job: %s', job.id);
+        await this.service.executeJob(job.type, job.info, job.accountId);
+        job.lastRunTime = new Date();
+        await job.save();
+        log('Finished job: %s', job.id);
       }
+    }, 10000);
+  }
 
-      try {
-        const jobFn = (await import(`${relJobsPath}/${name}`)).default;
-        agenda!.define(name, async job => {
-          jobFn(job.attrs.data, clients);
-        });
-        log('Registered job handler: %s', name);
-      } catch (err) {
-        if (err.code !== 'MODULE_NOT_FOUND') {
-          log.warn('Not a valid handler: %s', `${relJobsPath}/${name}`);
-        }
-      }
-    }),
-  );
+  public async schedule(jobDesc: JobDescripton, type: string, info: Value, account: Account & HasId): Promise<void> {
+    const job = new Job(account.id, type, info, jobDesc.runTime);
+    await job.save();
+    log('Scheduled job %s -- %s', type, job.id);
+  }
+}
 
-  await agenda.start();
-};
-
-// This proxy just forwards all calls to the agenda instance. It's only
-// needed because of the order of dependency loading.
-const agendaProxy = new Proxy<Agenda>(new Agenda(), {
-  get: (_: unknown, key: string): unknown => ((agenda! as unknown) as { [key: string]: unknown })[key],
-});
-
-export default agendaProxy;
+export default Jobs;

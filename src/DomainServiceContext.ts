@@ -5,7 +5,7 @@ import { createNamespace } from 'cls-hooked';
 
 import { AuthApi } from './domains/auth/AuthApi';
 import DomainService from './DomainService';
-import { JobDescripton } from './jobs-new';
+import { JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceMessage } from './types';
 
 const contextNS = createNamespace('DomainServiceContext');
