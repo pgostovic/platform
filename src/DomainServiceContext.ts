@@ -79,9 +79,8 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     return this.identity.accountId;
   }
 
-  public async authenticateConnection(): Promise<void> {
-    const { accountId } = await this.auth.authenticateConnection();
-    this.identity.accountId = accountId;
+  public async authenticate(): Promise<void> {
+    this.identity.accountId = this.identity.accountId || (await this.auth.authenticateConnection()).accountId;
   }
 
   /**
