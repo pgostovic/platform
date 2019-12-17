@@ -209,12 +209,8 @@ export default abstract class DomainService {
     connectionId,
     accountId,
     origin,
-  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> => {
-    if (!connectionId && !accountId) {
-      throw new Error('One of connectionId or accountId must be present');
-    }
-
-    return DomainServiceContext.set(
+  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> =>
+    DomainServiceContext.set(
       {
         service: this,
         clients: this.apiClients,
@@ -235,13 +231,12 @@ export default abstract class DomainService {
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
             for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-              yield signedMessage({ type: 'response', info: r, origin, connectionId });
+              yield signedMessage({ type: 'response', info: r, origin, connectionId, accountId });
             }
           })();
         } else {
-          return signedMessage({ type: 'response', info: resp, origin, connectionId });
+          return signedMessage({ type: 'response', info: resp, origin, connectionId, accountId });
         }
       },
     );
-  };
 }

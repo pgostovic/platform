@@ -5,6 +5,7 @@ import { createNamespace } from 'cls-hooked';
 
 import { signedMessage } from './check';
 import { AuthApi } from './domains/auth/AuthApi';
+import authenticateConnection from './domains/auth/handlers/authenticateConnection';
 import DomainService from './DomainService';
 import { JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceMessage } from './types';
@@ -83,7 +84,11 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   }
 
   public async authenticate(): Promise<void> {
-    this.accountId = this.accountId || (await this.auth.authenticateConnection()).accountId;
+    if (this.service.getDomain() === 'auth') {
+      this.accountId = this.accountId || (await authenticateConnection()).accountId;
+    } else {
+      this.accountId = this.accountId || (await this.auth.authenticateConnection()).accountId;
+    }
   }
 
   /**
