@@ -5,6 +5,7 @@ import uuid from 'uuid/v4';
 
 import { signedMessage } from './check';
 import DomainClient from './DomainClient';
+import DomainServiceContext from './DomainServiceContext';
 import { DomainServiceApi, DomainServiceMessage, ServiceMessage } from './types';
 
 const ORIGIN = uuid().replace(/[^\w]/g, '');
@@ -37,6 +38,17 @@ export default class DomainNATSClient extends DomainClient {
 
   protected createRequestMessage(type: string, data: unknown): DomainServiceMessage {
     const message = super.createRequestMessage(type, data);
-    return signedMessage({ ...message, origin: ORIGIN });
+
+    const context = DomainServiceContext.get();
+    if (!context) {
+      throw new Error('No context set');
+    }
+
+    return signedMessage({
+      ...message,
+      origin: ORIGIN,
+      connectionId: context.getConnectionId(),
+      accountId: context.getAccountId(),
+    });
   }
 }
