@@ -38,17 +38,9 @@ export default class DomainNATSClient extends DomainClient {
 
   protected createRequestMessage(type: string, data: unknown): DomainServiceMessage {
     const message = super.createRequestMessage(type, data);
-
     const context = DomainServiceContext.get();
-    if (!context) {
-      throw new Error('No context set');
-    }
-
-    return signedMessage({
-      ...message,
-      origin: ORIGIN,
-      connectionId: context.getConnectionId(),
-      accountId: context.getAccountId(),
-    });
+    const connectionId = context ? context.getConnectionId() : undefined;
+    const accountId = context ? context.getAccountId() : undefined;
+    return signedMessage({ ...message, origin: ORIGIN, connectionId, accountId });
   }
 }
