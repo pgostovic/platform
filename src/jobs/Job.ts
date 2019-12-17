@@ -1,4 +1,3 @@
-import { Value } from '@phnq/message';
 import { field, Model, ModelId, search } from '@phnq/model';
 import Cursor from '@phnq/model/Cursor';
 
@@ -9,11 +8,11 @@ class Job extends Model {
 
   @field public readonly accountId: ModelId;
   @field public readonly type: string;
-  @field public readonly info: Value;
+  @field public readonly info: unknown;
   @field public nextRunTime: Date;
   @field public lastRunTime?: Date;
 
-  public constructor(accountId: ModelId, type: string, info: Value, nextRunTime: Date) {
+  public constructor(accountId: ModelId, type: string, info: unknown, nextRunTime: Date) {
     super();
     this.accountId = accountId;
     this.type = type;

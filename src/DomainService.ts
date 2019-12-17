@@ -1,12 +1,13 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
-import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType, Value } from '@phnq/message';
+import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { ModelId } from '@phnq/model';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
+import { signedMessage, verifiedMessage } from './check';
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
@@ -15,7 +16,7 @@ import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './
 
 const HANDLERS = 'handlers';
 
-const mapPublishSubject = (message: Message<Value>): string => {
+const mapPublishSubject = (message: Message): string => {
   switch (message.t) {
     case MessageType.Send:
       return 'notification';
@@ -79,7 +80,7 @@ export default abstract class DomainService {
       }),
     );
 
-    this.apiConnection.onReceive(this.onReceive);
+    this.apiConnection.onReceive(message => this.onReceive(verifiedMessage(message)));
 
     await this.scanForHandlers();
 
@@ -97,7 +98,7 @@ export default abstract class DomainService {
     return [...this.handlers.keys()];
   }
 
-  public async scheduleJob(jobDesc: JobDescripton, type: string, info: Value): Promise<void> {
+  public async scheduleJob(jobDesc: JobDescripton, type: string, info: unknown): Promise<void> {
     await this.jobs.schedule(
       jobDesc,
       `${this.config.domain}.${type}`,
@@ -106,7 +107,7 @@ export default abstract class DomainService {
     );
   }
 
-  public async executeJob(type: string, info: Value, accountId: ModelId): Promise<void> {
+  public async executeJob(type: string, info: unknown, accountId: ModelId): Promise<void> {
     const localType = this.toLocalType(type);
     const handler = this.handlers.get(localType);
     if (!handler) {
@@ -126,10 +127,10 @@ export default abstract class DomainService {
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-            await context.notify(`jobResult.${type}`, r as Value, [accountId]);
+            await context.notify(`jobResult.${type}`, r, [accountId]);
           }
         } else {
-          await context.notify(`jobResult.${type}`, resp as Value, [accountId]);
+          await context.notify(`jobResult.${type}`, resp, [accountId]);
         }
       },
     );
@@ -172,7 +173,10 @@ export default abstract class DomainService {
 
     this.log('handler paths: %O', handlerPaths);
 
-    this.handlers.set(HANDLERS, async (): Promise<Value> => ({ domain: domain, handlers: [...this.handlers.keys()] }));
+    this.handlers.set(
+      HANDLERS,
+      async (): Promise<unknown> => ({ domain: domain, handlers: [...this.handlers.keys()] }),
+    );
 
     handlerPaths.forEach(
       async (handlerPath): Promise<void> => {
@@ -203,14 +207,19 @@ export default abstract class DomainService {
     type,
     info,
     connectionId,
+    accountId,
     origin,
-  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> =>
-    DomainServiceContext.set(
+  }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> => {
+    if (!connectionId || !accountId) {
+      throw new Error('One of connectionId or accountId must be present');
+    }
+
+    return DomainServiceContext.set(
       {
         service: this,
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
-        identity: { connectionId },
+        identity: { connectionId, accountId },
       },
       async () => {
         const localType = this.toLocalType(type);
@@ -225,12 +234,13 @@ export default abstract class DomainService {
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
             for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-              yield { type: 'response', info: r as Value, origin, connectionId };
+              yield signedMessage({ type: 'response', info: r, origin, connectionId });
             }
           })();
         } else {
-          return { type: 'response', info: resp as Value, origin, connectionId };
+          return signedMessage({ type: 'response', info: resp, origin, connectionId });
         }
       },
     );
+  };
 }

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MessageConnection, Value } from '@phnq/message';
+import { MessageConnection } from '@phnq/message';
 import { ModelId } from '@phnq/model';
 import { createNamespace } from 'cls-hooked';
 
+import { signedMessage } from './check';
 import { AuthApi } from './domains/auth/AuthApi';
 import DomainService from './DomainService';
 import { JobDescripton } from './jobs';
@@ -66,7 +67,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     return new Proxy(
       {},
       {
-        get: (_: any, type: string) => (params: Value) => this.service.scheduleJob(jobDesc, type, params),
+        get: (_: any, type: string) => (params: unknown) => this.service.scheduleJob(jobDesc, type, params),
       },
     );
   }
@@ -91,7 +92,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
    * @param info Notification message data
    * @param recipientAccountIds (optional) account ids of the repients
    */
-  public async notify(type: string, info: Value, recipientAccountIds?: ModelId[]): Promise<void> {
+  public async notify(type: string, info: unknown, recipientAccountIds?: ModelId[]): Promise<void> {
     const { auth } = (this as unknown) as { auth: AuthApi };
 
     const accountIds = recipientAccountIds || [undefined];
@@ -101,12 +102,14 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
       await Promise.all(
         connectionIds.map(connectionId =>
-          this.apiConnection.send({
-            type: `${this.service.getDomain()}.${type}`,
-            info,
-            connectionId,
-            origin: '',
-          }),
+          this.apiConnection.send(
+            signedMessage({
+              type: `${this.service.getDomain()}.${type}`,
+              info,
+              connectionId,
+              origin: '',
+            }),
+          ),
         ),
       );
     }

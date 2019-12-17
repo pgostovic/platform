@@ -2,7 +2,7 @@ import { MessageConnection } from '@phnq/message';
 import { WebSocketMessageClient } from '@phnq/message/WebSocketMessageClient';
 
 import DomainClient from './DomainClient';
-import { ApiServiceMessage, DomainServiceApi } from './types';
+import { DomainServiceApi, ServiceMessage } from './types';
 
 export default class DomainWSClient extends DomainClient {
   protected static create(url: string, DomainClientClass: typeof DomainWSClient): DomainServiceApi {
@@ -18,7 +18,7 @@ export default class DomainWSClient extends DomainClient {
     this.url = url;
   }
 
-  protected async getMessageClient(): Promise<MessageConnection<ApiServiceMessage>> {
-    return WebSocketMessageClient.create<ApiServiceMessage>(this.url);
+  protected async getMessageClient(): Promise<MessageConnection<ServiceMessage>> {
+    return WebSocketMessageClient.create<ServiceMessage>(this.url);
   }
 }

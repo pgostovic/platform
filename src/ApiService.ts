@@ -1,11 +1,12 @@
 import { createLogger } from '@phnq/log';
-import { ConnectionId, Message, MessageConnection, Value, WebSocketMessageServer } from '@phnq/message';
+import { ConnectionId, Message, MessageConnection, WebSocketMessageServer } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import http from 'http';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
-import { ApiServiceMessage, DomainServiceMessage } from './types';
+import { signedMessage, verifiedMessage } from './check';
+import { DomainServiceMessage, ServiceMessage } from './types';
 
 const authTokenCookie = process.env.AUTH_TOKEN_COOKIE;
 
@@ -26,14 +27,14 @@ export default class ApiService {
   private config: Config;
   private httpServer: http.Server;
   private natsClient?: NATSClient;
-  private messageServer: WebSocketMessageServer<ApiServiceMessage>;
+  private messageServer: WebSocketMessageServer<ServiceMessage>;
   private servicesConnection?: MessageConnection<DomainServiceMessage>;
 
   private constructor(config: Config) {
     this.config = config;
     this.httpServer = http.createServer();
 
-    this.messageServer = new WebSocketMessageServer<ApiServiceMessage>({
+    this.messageServer = new WebSocketMessageServer<ServiceMessage>({
       httpServer: this.httpServer,
       onReceive: this.onReceiveClientMessage,
       onConnect: this.onConnect,
@@ -55,17 +56,11 @@ export default class ApiService {
 
     const natsTransport = await NATSTransport.create(this.natsClient, {
       subscriptions: [ORIGIN, 'notification'],
-      publishSubject: (message: Message<Value>): string => (message.p as DomainServiceMessage).type as string,
+      publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });
 
     this.servicesConnection = new MessageConnection(natsTransport);
-    this.servicesConnection.onReceive(async ({ type, info, connectionId }) => {
-      const conn = this.messageServer.getConnection(connectionId);
-      if (conn) {
-        conn.send({ type, info });
-      }
-      return { type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' };
-    });
+    this.servicesConnection.onReceive(message => this.onReceiveDomainMessage(verifiedMessage(message)));
   }
 
   public async stop(): Promise<void> {
@@ -90,6 +85,21 @@ export default class ApiService {
     log('Stopped.');
   }
 
+  private async onReceiveDomainMessage({
+    type,
+    info,
+    connectionId,
+  }: DomainServiceMessage): Promise<DomainServiceMessage> {
+    if (!connectionId) {
+      throw new Error('No connectionId.');
+    }
+    const conn = this.messageServer.getConnection(connectionId);
+    if (conn) {
+      conn.send({ type, info });
+    }
+    return signedMessage({ type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' });
+  }
+
   private onConnect = async (connectionId: ConnectionId, req: http.IncomingMessage): Promise<void> => {
     if (authTokenCookie) {
       const cookie = getParsedCookie(req.headers.cookie || '');
@@ -109,17 +119,17 @@ export default class ApiService {
 
   private onReceiveClientMessage = async (
     connectionId: ConnectionId,
-    { type, info }: ApiServiceMessage,
-  ): Promise<ApiServiceMessage | AsyncIterableIterator<ApiServiceMessage>> => {
+    { type, info }: ServiceMessage,
+  ): Promise<ServiceMessage | AsyncIterableIterator<ServiceMessage>> => {
     const servicesConnection = this.servicesConnection as MessageConnection<DomainServiceMessage>;
-    const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId };
+    const serviceRequest: DomainServiceMessage = signedMessage({ type, info, origin: ORIGIN, connectionId });
     const serviceResponse = await servicesConnection.request(serviceRequest);
 
     if (
       typeof serviceResponse === 'object' &&
-      (serviceResponse as AsyncIterableIterator<Value>)[Symbol.asyncIterator]
+      (serviceResponse as AsyncIterableIterator<ServiceMessage>)[Symbol.asyncIterator]
     ) {
-      return (async function*(): AsyncIterableIterator<ApiServiceMessage> {
+      return (async function*(): AsyncIterableIterator<ServiceMessage> {
         for await (const { type, info } of serviceResponse as AsyncIterableIterator<DomainServiceMessage>) {
           yield { type, info };
         }

@@ -27,7 +27,7 @@
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
     "@types/jest": "^24.0.23",
-    "@types/node": "^12.12.14",
+    "@types/node": "^12.12.18",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "^0.8.6",
     "@types/uuid": "^3.4.6",
@@ -36,7 +36,7 @@
     "@typescript-eslint/parser": "^1.13.0",
     "eslint": "^6.7.2",
     "eslint-config-prettier": "^6.7.0",
-    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-prettier": "^3.1.2",
     "eslint-plugin-simple-import-sort": "^4.0.0",
     "jest": "^24.9.0",
     "prettier": "^1.19.1",
@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
-    "@phnq/message": "^1.9.2",
+    "@phnq/message": "^1.9.3",
     "@phnq/model": "^1.6.13",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.7",

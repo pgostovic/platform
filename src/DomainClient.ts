@@ -1,26 +1,26 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
-import { MessageConnection, Value } from '@phnq/message';
+import { MessageConnection } from '@phnq/message';
 import prettyHrtime from 'pretty-hrtime';
 
-import { ApiServiceMessage, DomainServiceApi } from './types';
+import { DomainServiceApi, ServiceMessage } from './types';
 
 interface QueuedCall {
   key: string;
-  args: Value[];
-  resolve: (msg: Value) => void;
+  args: unknown[];
+  resolve: (msg: unknown) => void;
   reject: (err: Error) => void;
 }
 
 interface NotficationHandlerEntry {
   type: string;
-  handler: ({ type, info }: { type: string; info: Value }) => void;
+  handler: ({ type, info }: { type: string; info: unknown }) => void;
 }
 
 export default abstract class DomainClient {
   private domain: string;
   private log: Logger;
-  private messageClient?: MessageConnection<ApiServiceMessage>;
+  private messageClient?: MessageConnection<ServiceMessage>;
   private typesLoaded = false;
   private q: QueuedCall[] = [];
   private proxy: DomainServiceApi;
@@ -36,7 +36,7 @@ export default abstract class DomainClient {
           target[key] ||
           (this.typesLoaded
             ? undefined
-            : (...args: Value[]): Promise<Value> =>
+            : (...args: unknown[]): Promise<unknown> =>
                 new Promise((resolve, reject): void => {
                   this.q.push({ key, args, resolve, reject });
                 }))
@@ -45,7 +45,7 @@ export default abstract class DomainClient {
     });
   }
 
-  public on(type: string, handler: ({ type, info }: { type: string; info: Value }) => void): void {
+  public on(type: string, handler: ({ type, info }: { type: string; info: unknown }) => void): void {
     this.notificationHandlers.push({ type, handler });
   }
 
@@ -53,17 +53,17 @@ export default abstract class DomainClient {
     return this.proxy;
   }
 
-  protected abstract async getMessageClient(): Promise<MessageConnection<ApiServiceMessage>>;
+  protected abstract async getMessageClient(): Promise<MessageConnection<ServiceMessage>>;
 
-  protected createRequestMessage(type: string, data: Value, connectionId?: string): ApiServiceMessage {
-    return { info: data, type: `${this.domain}.${type}`, connectionId };
+  protected createRequestMessage(type: string, data: unknown): ServiceMessage {
+    return { info: data, type: `${this.domain}.${type}` };
   }
 
   protected async initialize(): Promise<void> {
     const messageClient = await this.getMessageClient();
     messageClient.onConversation((c): void => {
       this.log.groupCollapsed(
-        `${(c.request.p as ApiServiceMessage).type} (${
+        `${(c.request.p as ServiceMessage).type} (${
           c.responses.length === 0 ? 'one-way' : prettyHrtime(c.responses.slice(-1)[0].time)
         })`,
         (l: Logger): void => {
@@ -112,20 +112,20 @@ export default abstract class DomainClient {
     result.handlers.forEach((handler): void => {
       Object.defineProperty(this, handler, {
         enumerable: true,
-        value: async (data: Value, connectionId?: string): Promise<Value | AsyncIterableIterator<Value>> => {
-          const response = await messageClient.request(this.createRequestMessage(handler, data, connectionId));
+        value: async (data: unknown): Promise<unknown | AsyncIterableIterator<unknown>> => {
+          const response = await messageClient.request(this.createRequestMessage(handler, data));
 
           if (
             typeof response === 'object' &&
-            (response as AsyncIterableIterator<ApiServiceMessage>)[Symbol.asyncIterator]
+            (response as AsyncIterableIterator<ServiceMessage>)[Symbol.asyncIterator]
           ) {
-            return (async function*(): AsyncIterableIterator<Value> {
-              for await (const resp of response as AsyncIterableIterator<ApiServiceMessage>) {
+            return (async function*(): AsyncIterableIterator<unknown> {
+              for await (const resp of response as AsyncIterableIterator<ServiceMessage>) {
                 yield resp.info;
               }
             })();
           } else {
-            return (response as ApiServiceMessage).info;
+            return (response as ServiceMessage).info;
           }
         },
         writable: true,

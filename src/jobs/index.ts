@@ -1,5 +1,4 @@
 import { createLogger } from '@phnq/log';
-import { Value } from '@phnq/message';
 import { Data, HasId } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
@@ -41,7 +40,7 @@ class Jobs {
     }, 10000);
   }
 
-  public async schedule(jobDesc: JobDescripton, type: string, info: Value, account: Account & HasId): Promise<void> {
+  public async schedule(jobDesc: JobDescripton, type: string, info: unknown, account: Account & HasId): Promise<void> {
     const job = new Job(account.id, type, info, jobDesc.runTime);
     await job.save();
     log('Scheduled job %s -- %s', type, job.id);
