@@ -11,8 +11,6 @@ import { DomainServiceApi, DomainServiceMessage } from './types';
 
 const contextNS = createNamespace('DomainServiceContext');
 
-type Identity = { connectionId: string; accountId?: ModelId } | { connectionId?: string; accountId: ModelId };
-
 interface WithAuthApi {
   auth: AuthApi;
 }
@@ -21,12 +19,13 @@ interface Params {
   service: DomainService;
   clients: Map<string, DomainServiceApi>;
   apiConnection: MessageConnection<DomainServiceMessage>;
-  identity: Identity;
+  connectionId?: string;
+  accountId?: ModelId;
 }
 
 export default class DomainServiceContext<T = unknown> implements WithAuthApi {
-  public static set<T = unknown>({ service, clients, apiConnection, identity }: Params, fn: () => T): T {
-    const context = new DomainServiceContext(service, clients, apiConnection, identity);
+  public static set<T = unknown>({ service, clients, apiConnection, connectionId, accountId }: Params, fn: () => T): T {
+    const context = new DomainServiceContext(service, clients, apiConnection, connectionId, accountId);
     return contextNS.runAndReturn(() => {
       contextNS.set('currentContext', context);
       return fn();
@@ -39,7 +38,8 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
   private readonly service: DomainService;
   private readonly apiConnection: MessageConnection<DomainServiceMessage>;
-  private identity: Identity;
+  private connectionId?: string;
+  private accountId?: ModelId;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
 
@@ -47,17 +47,19 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     service: DomainService,
     clients: Map<string, DomainServiceApi>,
     apiConnection: MessageConnection<DomainServiceMessage>,
-    identity: Identity,
+    connectionId?: string,
+    accountId?: ModelId,
   ) {
     this.service = service;
     this.apiConnection = apiConnection;
-    this.identity = identity;
+    this.connectionId = connectionId;
+    this.accountId = accountId;
 
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
 
       const clientProxy = new Proxy(client, {
-        get: (target: any, key: any) => (params: any) => target[key](params, this.identity.connectionId),
+        get: (target: any, key: any) => (params: any) => target[key](params),
       });
       Object.defineProperty(this, name, { value: clientProxy, writable: true, enumerable: false });
     }
@@ -73,15 +75,15 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   }
 
   public getConnectionId(): string | undefined {
-    return this.identity.connectionId;
+    return this.connectionId;
   }
 
   public getAccountId(): ModelId | undefined {
-    return this.identity.accountId;
+    return this.accountId;
   }
 
   public async authenticate(): Promise<void> {
-    this.identity.accountId = this.identity.accountId || (await this.auth.authenticateConnection()).accountId;
+    this.accountId = this.accountId || (await this.auth.authenticateConnection()).accountId;
   }
 
   /**

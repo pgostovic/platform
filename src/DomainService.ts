@@ -119,7 +119,7 @@ export default abstract class DomainService {
         service: this,
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
-        identity: { accountId },
+        accountId,
       },
       async () => {
         const context = DomainServiceContext.get();
@@ -210,7 +210,7 @@ export default abstract class DomainService {
     accountId,
     origin,
   }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> => {
-    if (!connectionId || !accountId) {
+    if (!connectionId && !accountId) {
       throw new Error('One of connectionId or accountId must be present');
     }
 
@@ -219,7 +219,8 @@ export default abstract class DomainService {
         service: this,
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
-        identity: { connectionId, accountId },
+        connectionId,
+        accountId,
       },
       async () => {
         const localType = this.toLocalType(type);
