@@ -7,7 +7,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
-import { signedMessage, verifiedMessage } from './check';
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
@@ -73,14 +72,20 @@ export default abstract class DomainService {
     this.natsClient = await connectNATS(natsConfig);
     this.log('Connected to NATS.');
 
+    const signSalt = process.env.MESSAGE_SIGN_SALT;
+    if (!signSalt) {
+      this.log.warn(`MESSAGE_SIGN_SALT not set for domain service ${this.getDomain()}`);
+    }
+
     this.apiConnection = new MessageConnection(
       await NATSTransport.create(this.natsClient, {
         subscriptions: [`${domain}.*`],
         publishSubject: mapPublishSubject,
       }),
+      { signSalt },
     );
 
-    this.apiConnection.onReceive(message => this.onReceive(verifiedMessage(message)));
+    this.apiConnection.onReceive(message => this.onReceive(message));
 
     await this.scanForHandlers();
 
@@ -231,11 +236,11 @@ export default abstract class DomainService {
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           return (async function*(): AsyncIterableIterator<DomainServiceMessage> {
             for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-              yield signedMessage({ type: 'response', info: r, origin, connectionId, accountId });
+              yield { type: 'response', info: r, origin, connectionId, accountId };
             }
           })();
         } else {
-          return signedMessage({ type: 'response', info: resp, origin, connectionId, accountId });
+          return { type: 'response', info: resp, origin, connectionId, accountId };
         }
       },
     );

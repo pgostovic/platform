@@ -3,7 +3,6 @@ import { MessageConnection } from '@phnq/message';
 import { ModelId } from '@phnq/model';
 import { createNamespace } from 'cls-hooked';
 
-import { signedMessage } from './check';
 import { AuthApi } from './domains/auth/AuthApi';
 import authenticateConnection from './domains/auth/handlers/authenticateConnection';
 import DomainService from './DomainService';
@@ -109,14 +108,12 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
       await Promise.all(
         connectionIds.map(connectionId =>
-          this.apiConnection.send(
-            signedMessage({
-              type: `${this.service.getDomain()}.${type}`,
-              info,
-              connectionId,
-              origin: '',
-            }),
-          ),
+          this.apiConnection.send({
+            type: `${this.service.getDomain()}.${type}`,
+            info,
+            connectionId,
+            origin: '',
+          }),
         ),
       );
     }

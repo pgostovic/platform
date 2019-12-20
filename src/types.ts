@@ -11,10 +11,7 @@ export interface DomainServiceMessage extends ServiceMessage {
   origin: string;
   connectionId?: string;
   accountId?: string;
-  sig: string;
 }
-
-export type UnsignedDomainServiceMessage = Omit<DomainServiceMessage, 'sig'>;
 
 /**
  * When a message comes from the APIService (i.e. via a user's websocket) it has a connectionId.

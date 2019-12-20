@@ -5,7 +5,6 @@ import http from 'http';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
-import { signedMessage, verifiedMessage } from './check';
 import { DomainServiceMessage, ServiceMessage } from './types';
 
 const authTokenCookie = process.env.AUTH_TOKEN_COOKIE;
@@ -59,8 +58,13 @@ export default class ApiService {
       publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });
 
-    this.servicesConnection = new MessageConnection(natsTransport);
-    this.servicesConnection.onReceive(message => this.onReceiveDomainMessage(verifiedMessage(message)));
+    const signSalt = process.env.MESSAGE_SIGN_SALT;
+    if (!signSalt) {
+      log.warn('MESSAGE_SIGN_SALT not set');
+    }
+
+    this.servicesConnection = new MessageConnection(natsTransport, { signSalt });
+    this.servicesConnection.onReceive(message => this.onReceiveDomainMessage(message));
   }
 
   public async stop(): Promise<void> {
@@ -97,7 +101,7 @@ export default class ApiService {
     if (conn) {
       conn.send({ type, info });
     }
-    return signedMessage({ type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' });
+    return { type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' };
   }
 
   private onConnect = async (connectionId: ConnectionId, req: http.IncomingMessage): Promise<void> => {
@@ -122,7 +126,7 @@ export default class ApiService {
     { type, info }: ServiceMessage,
   ): Promise<ServiceMessage | AsyncIterableIterator<ServiceMessage>> => {
     const servicesConnection = this.servicesConnection as MessageConnection<DomainServiceMessage>;
-    const serviceRequest: DomainServiceMessage = signedMessage({ type, info, origin: ORIGIN, connectionId });
+    const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId };
     const serviceResponse = await servicesConnection.request(serviceRequest);
 
     if (

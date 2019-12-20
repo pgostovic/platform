@@ -1,9 +1,9 @@
+import { createLogger } from '@phnq/log';
 import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
-import { signedMessage } from './check';
 import DomainClient from './DomainClient';
 import DomainServiceContext from './DomainServiceContext';
 import { DomainServiceApi, DomainServiceMessage, ServiceMessage } from './types';
@@ -25,6 +25,7 @@ export default class DomainNATSClient extends DomainClient {
   protected constructor(natsConfig: NatsConnectionOptions, domain: string = 'domain') {
     super(domain);
     this.natsConfig = natsConfig;
+    this.log = createLogger(`NATSClient.${domain}`);
   }
 
   protected async getMessageClient(): Promise<MessageConnection<ServiceMessage>> {
@@ -33,7 +34,12 @@ export default class DomainNATSClient extends DomainClient {
       subscriptions: [ORIGIN],
       publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });
-    return new MessageConnection(natsTransport);
+    const signSalt = process.env.MESSAGE_SIGN_SALT;
+    if (!signSalt) {
+      this.log.warn(`MESSAGE_SIGN_SALT not set for domain client ${this.getDomain()}`);
+    }
+
+    return new MessageConnection(natsTransport, { signSalt });
   }
 
   protected createRequestMessage(type: string, data: unknown): DomainServiceMessage {
@@ -41,6 +47,6 @@ export default class DomainNATSClient extends DomainClient {
     const context = DomainServiceContext.get();
     const connectionId = context ? context.getConnectionId() : undefined;
     const accountId = context ? context.getAccountId() : undefined;
-    return signedMessage({ ...message, origin: ORIGIN, connectionId, accountId });
+    return { ...message, origin: ORIGIN, connectionId, accountId };
   }
 }

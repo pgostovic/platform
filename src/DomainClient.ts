@@ -19,7 +19,7 @@ interface NotficationHandlerEntry {
 
 export default abstract class DomainClient {
   private domain: string;
-  private log: Logger;
+  protected log: Logger;
   private messageClient?: MessageConnection<ServiceMessage>;
   private typesLoaded = false;
   private q: QueuedCall[] = [];
@@ -43,6 +43,10 @@ export default abstract class DomainClient {
         );
       },
     });
+  }
+
+  public getDomain(): string {
+    return this.domain;
   }
 
   public on(type: string, handler: ({ type, info }: { type: string; info: unknown }) => void): void {
