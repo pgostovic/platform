@@ -1,49 +1,74 @@
 import { createLogger } from '@phnq/log';
+import { Logger } from '@phnq/log/logger';
 import { Data, HasId } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
 import Job from './Job';
 
-const log = createLogger('jobs');
-
 export interface JobDescripton extends Data {
-  runTime: Date;
+  runTime?: Date;
 }
 
 class Jobs {
   private service: DomainService;
+  private log: Logger;
+  private nextJobRunTimeout?: NodeJS.Timeout;
 
   public constructor(service: DomainService) {
     this.service = service;
+    this.log = createLogger(`jobs.${this.service.getDomain()}`);
   }
 
   public async start(): Promise<void> {
-    log('Starting jobs for service %s', this.service.getDomain());
-
-    // start some prcocess to query for upcoming jobs and run them
-    // - grab a job and lock it so it's not run multiple times
-    // - update job's status for the various states - i.e. started, failed, succeeded, etc.
-    // - save the time the job ran at.
-    // - call this.service.executeJobWithData() to actually run the job
-    // console.log('start', this.service);
-
-    setInterval(async () => {
-      log('Find jobs to run...');
-      for await (const job of Job.jobsReadyToRun().iterator) {
-        log('Running job: %s', job.id);
-        await this.service.executeJob(job.type, job.info, job.accountId);
-        job.lastRunTime = new Date();
-        await job.save();
-        log('Finished job: %s', job.id);
-      }
-    }, 10000);
+    this.log('Starting jobs for service %s', this.service.getDomain());
+    this.runReadyJobs();
   }
 
   public async schedule(jobDesc: JobDescripton, type: string, info: unknown, account: Account & HasId): Promise<void> {
-    const job = new Job(account.id, type, info, jobDesc.runTime);
+    const now = new Date();
+    const job = new Job(account.id, type, info, jobDesc.runTime || now);
     await job.save();
-    log('Scheduled job %s -- %s', type, job.id);
+    this.log('Scheduled job %s -- %s', type, job.id);
+
+    if (job.nextRunTime <= now) {
+      this.runReadyJobs();
+    } else {
+      this.scheduleNextJobsRun();
+    }
+  }
+
+  private async scheduleNextJobsRun(): Promise<void> {
+    if (this.nextJobRunTimeout) {
+      clearTimeout(this.nextJobRunTimeout);
+    }
+
+    const nextJob = await Job.nextJob();
+    if (nextJob) {
+      this.log('Next job: %s at %s', nextJob.type, nextJob.nextRunTime.toISOString());
+      this.nextJobRunTimeout = setTimeout(() => {
+        this.nextJobRunTimeout = undefined;
+        this.runReadyJobs();
+      }, nextJob.nextRunTime.getTime() - Date.now());
+    }
+  }
+
+  private async runReadyJobs(): Promise<void> {
+    if (this.nextJobRunTimeout) {
+      clearTimeout(this.nextJobRunTimeout);
+    }
+
+    try {
+      for await (const job of Job.jobsReadyToRun().iterator) {
+        this.log('Running job: %s', job.id);
+        await this.service.executeJob(job.type, job.info, job.accountId);
+        job.lastRunTime = new Date();
+        await job.save();
+        this.log('Finished job: %s', job.id);
+      }
+    } finally {
+      this.scheduleNextJobsRun();
+    }
   }
 }
 
