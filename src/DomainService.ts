@@ -134,10 +134,10 @@ export default abstract class DomainService {
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
-            await context.notify(`jobResult.${type}`, r, [accountId]);
+            await context.notify(`jobResult.${localType}`, r, [accountId]);
           }
-        } else {
-          await context.notify(`jobResult.${type}`, resp, [accountId]);
+        } else if (resp) {
+          await context.notify(`jobResult.${localType}`, resp, [accountId]);
         }
       },
     );
