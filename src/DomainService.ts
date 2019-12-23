@@ -47,7 +47,7 @@ export default abstract class DomainService {
   private handlers = new Map<string, DomainServiceHandler>();
   private authClient: AuthApi;
   private apiClients = new Map<string, DomainServiceApi>();
-  private jobs = new Jobs(this);
+  private jobs: Jobs;
 
   protected constructor(config: Config) {
     this.config = config;
@@ -58,6 +58,8 @@ export default abstract class DomainService {
     if (config.domain !== 'auth') {
       this.addApiClient('auth', this.authClient);
     }
+
+    this.jobs = new Jobs(this);
   }
 
   public getDomain(): string {
@@ -106,7 +108,7 @@ export default abstract class DomainService {
   public async scheduleJob(jobDesc: JobDescripton, type: string, info: unknown): Promise<void> {
     await this.jobs.schedule(
       jobDesc,
-      `${this.config.domain}.${type}`,
+      `${this.getDomain()}.${type}`,
       info,
       await DomainServiceContext.get().auth.getAccount(),
     );
@@ -166,7 +168,7 @@ export default abstract class DomainService {
   }
 
   private toLocalType(messageType: string): string {
-    return (messageType || '').replace(new RegExp(`^${this.config.domain}\.`), '');
+    return (messageType || '').replace(new RegExp(`^${this.getDomain()}\.`), '');
   }
 
   private async scanForHandlers(): Promise<void> {
