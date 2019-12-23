@@ -7,7 +7,7 @@ class Job extends Model {
   }
 
   public static async nextJob(): Promise<(Job & HasId) | undefined> {
-    return search(Job, { lastRunTime: { $exists: false } }, { sort: [['nextRunTime']], limit: 1 }).first();
+    return search(Job, { lastRunTime: { $exists: false } }, { sort: [['nextRunTime', 1]], limit: 1 }).first();
   }
 
   @field public readonly accountId: ModelId;
