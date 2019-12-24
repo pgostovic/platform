@@ -6,7 +6,7 @@ import { createNamespace } from 'cls-hooked';
 import { AuthApi } from './domains/auth/AuthApi';
 import authenticateConnection from './domains/auth/handlers/authenticateConnection';
 import DomainService from './DomainService';
-import { JobDescripton } from './jobs';
+import { JOB_KEY, JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceMessage } from './types';
 
 const contextNS = createNamespace('DomainServiceContext');
@@ -21,11 +21,15 @@ interface Params {
   apiConnection: MessageConnection<DomainServiceMessage>;
   connectionId?: string;
   accountId?: ModelId;
+  jobKey?: string;
 }
 
 export default class DomainServiceContext<T = unknown> implements WithAuthApi {
-  public static set<T = unknown>({ service, clients, apiConnection, connectionId, accountId }: Params, fn: () => T): T {
-    const context = new DomainServiceContext(service, clients, apiConnection, connectionId, accountId);
+  public static set<T = unknown>(
+    { service, clients, apiConnection, connectionId, accountId, jobKey }: Params,
+    fn: () => T,
+  ): T {
+    const context = new DomainServiceContext(service, clients, apiConnection, connectionId, accountId, jobKey);
     return contextNS.runAndReturn(() => {
       contextNS.set('currentContext', context);
       return fn();
@@ -40,6 +44,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   private readonly apiConnection: MessageConnection<DomainServiceMessage>;
   private connectionId?: string;
   private accountId?: ModelId;
+  private jobKey?: string;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
 
@@ -49,11 +54,13 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     apiConnection: MessageConnection<DomainServiceMessage>,
     connectionId?: string,
     accountId?: ModelId,
+    jobKey?: string,
   ) {
     this.service = service;
     this.apiConnection = apiConnection;
     this.connectionId = connectionId;
     this.accountId = accountId;
+    this.jobKey = jobKey;
 
     for (const name of clients.keys()) {
       const client = clients.get(name)!;
@@ -83,7 +90,9 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   }
 
   public async authenticate(): Promise<void> {
-    if (this.service.getDomain() === 'auth') {
+    if (this.jobKey && (this.jobKey !== JOB_KEY || !this.accountId)) {
+      throw new Error('Not authenticated');
+    } else if (this.service.getDomain() === 'auth') {
       this.accountId = this.accountId || (await authenticateConnection()).accountId;
     } else {
       this.accountId = this.accountId || (await this.auth.authenticateConnection()).accountId;

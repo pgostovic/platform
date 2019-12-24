@@ -5,6 +5,9 @@ import { Data, HasId } from '@phnq/model';
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
 import Job from './Job';
+import uuid = require('uuid');
+
+export const JOB_KEY = uuid().replace(/[^\w]/g, '');
 
 export interface JobDescripton extends Data {
   runTime?: Date;
@@ -61,7 +64,11 @@ class Jobs {
     try {
       for await (const job of Job.jobsReadyToRun().iterator) {
         this.log('Running job: %s', job.id);
-        await this.service.executeJob(job.type, job.info, job.accountId);
+        try {
+          await this.service.executeJob(job.type, job.info, job.accountId);
+        } catch (err) {
+          job.error = err.message;
+        }
         job.lastRunTime = new Date();
         await job.save();
         this.log('Finished job: %s', job.id);

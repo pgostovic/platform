@@ -10,7 +10,7 @@ import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } f
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
-import Jobs, { JobDescripton } from './jobs';
+import Jobs, { JOB_KEY, JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
 const HANDLERS = 'handlers';
@@ -127,6 +127,7 @@ export default abstract class DomainService {
         clients: this.apiClients,
         apiConnection: this.apiConnection!,
         accountId,
+        jobKey: JOB_KEY,
       },
       async () => {
         const context = DomainServiceContext.get();
@@ -141,22 +142,6 @@ export default abstract class DomainService {
         }
       },
     );
-
-    // this.authClient.getActiveConnectionIds({ accountId });
-
-    // Conundrum: do I try to return a response if the connectionId is still active? Or is it better
-    // to just establish that jobs return nothing?
-    // Some options:
-    // 1. If the connectionId is active, then return the handler response to the connection as normal
-    //      - problem with this is the requestId that connects responses to requests is not available at this level of abstraction
-    //      - it's also a bit haphazard -- would only apply in short term jobs
-    // 2. Ignore the handler response, or log a warning if one is returned
-    //      - The handler could use context.notify() if needed
-    //      - not bad
-    // 3. Make the response meaningful -- job handler repsonse goes to all active connections for the account
-    //      - It would basically do as above in #2, but instead of explicitly having to call context.notify(),
-    //        the response would just be automaically sent to all active connections with some reasonable
-    //        type -- maybe something like jobResponse:${domain}.${type}
   }
 
   protected addApiClient(name: string, client: DomainServiceApi): void {

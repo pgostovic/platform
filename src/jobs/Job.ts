@@ -15,6 +15,7 @@ class Job extends Model {
   @field public readonly info: unknown;
   @field public nextRunTime: Date;
   @field public lastRunTime?: Date;
+  @field public error?: string;
 
   public constructor(accountId: ModelId, type: string, info: unknown, nextRunTime: Date) {
     super();
