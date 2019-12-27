@@ -89,6 +89,10 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     return this.accountId;
   }
 
+  /**
+   * Determine the account for the current context. An error is thrown if the account
+   * cannot be determined.
+   */
   public async authenticate(): Promise<void> {
     if (this.jobKey && (this.jobKey !== JOB_KEY || !this.accountId)) {
       throw new Error('Not authenticated');

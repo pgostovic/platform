@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
+import authenticate from './auth/authenticate';
 import { AuthApi } from './domains/auth/AuthApi';
 import AuthNATSClient from './domains/auth/AuthNATSClient';
 import DomainServiceContext from './DomainServiceContext';
@@ -131,7 +132,7 @@ export default abstract class DomainService {
       },
       async () => {
         const context = DomainServiceContext.get();
-        const resp = await handler(info);
+        const resp = await authenticate(handler)(info);
 
         if (typeof resp === 'object' && (resp as AsyncIterableIterator<DomainServiceMessage>)[Symbol.asyncIterator]) {
           for await (const r of resp as AsyncIterableIterator<DomainServiceMessage>) {
