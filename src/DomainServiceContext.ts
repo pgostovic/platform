@@ -114,7 +114,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   public async notify(type: string, info: unknown, recipientAccountIds?: ModelId[]): Promise<void> {
     const { auth } = (this as unknown) as { auth: AuthApi };
 
-    const accountIds = recipientAccountIds || [undefined];
+    const accountIds = recipientAccountIds || [this.accountId];
 
     for await (const accountId of accountIds) {
       const connectionIds = await auth.getActiveConnectionIds({ accountId });
