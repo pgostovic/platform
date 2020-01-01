@@ -36,11 +36,8 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     });
   }
 
-  public static bridge<T = unknown>(context: DomainServiceContext, fn: () => T): T {
-    return contextNS.runAndReturn(() => {
-      contextNS.set('currentContext', context);
-      return fn();
-    });
+  public static bridge(context: DomainServiceContext): void {
+    contextNS.set('currentContext', context);
   }
 
   public static get<T, C = {}>(): DomainServiceContext<T> & C {
