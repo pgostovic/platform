@@ -26,7 +26,7 @@ export default abstract class DomainClient {
   private proxy: DomainServiceApi;
   private notificationHandlers: NotficationHandlerEntry[] = [];
 
-  protected constructor(domain: string = 'domain') {
+  protected constructor(domain: string) {
     this.domain = domain;
     this.log = createLogger(`client.${domain}`);
     this.proxy = new Proxy(this, {

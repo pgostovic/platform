@@ -11,18 +11,15 @@ import { DomainServiceApi, DomainServiceMessage, ServiceMessage } from './types'
 const ORIGIN = uuid().replace(/[^\w]/g, '');
 
 export default class DomainNATSClient extends DomainClient {
-  protected static create(
-    natsConfig: NatsConnectionOptions,
-    DomainClientClass: typeof DomainNATSClient,
-  ): DomainServiceApi {
-    const client = new DomainClientClass(natsConfig);
+  public static create(domain: string, natsConfig: NatsConnectionOptions): DomainServiceApi {
+    const client = new DomainNATSClient(domain, natsConfig);
     client.initialize();
     return client.getProxy();
   }
 
   private natsConfig: NatsConnectionOptions;
 
-  protected constructor(natsConfig: NatsConnectionOptions, domain: string = 'domain') {
+  private constructor(domain: string, natsConfig: NatsConnectionOptions) {
     super(domain);
     this.natsConfig = natsConfig;
     this.log = createLogger(`NATSClient.${domain}`);

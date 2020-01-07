@@ -5,15 +5,15 @@ import DomainClient from './DomainClient';
 import { DomainServiceApi, ServiceMessage } from './types';
 
 export default class DomainWSClient extends DomainClient {
-  protected static create(url: string, DomainClientClass: typeof DomainWSClient): DomainServiceApi {
-    const client = new DomainClientClass(url);
+  public static create(domain: string, url: string): DomainServiceApi {
+    const client = new DomainWSClient(domain, url);
     client.initialize();
     return client.getProxy();
   }
 
   private url: string;
 
-  protected constructor(url: string, domain: string = 'domain') {
+  private constructor(domain: string, url: string) {
     super(domain);
     this.url = url;
   }

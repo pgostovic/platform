@@ -8,8 +8,7 @@ import path from 'path';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 
 import authenticate from './auth/authenticate';
-import { AuthApi } from './domains/auth/AuthApi';
-import AuthNATSClient from './domains/auth/AuthNATSClient';
+import DomainNATSClient from './DomainNATSClient';
 import DomainServiceContext from './DomainServiceContext';
 import Jobs, { JOB_KEY, JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
@@ -46,18 +45,16 @@ export default abstract class DomainService {
   private natsClient?: NATSClient;
   private apiConnection?: MessageConnection<DomainServiceMessage>;
   private handlers = new Map<string, DomainServiceHandler>();
-  private authClient: AuthApi;
   private apiClients = new Map<string, DomainServiceApi>();
   private jobs: Jobs;
 
   protected constructor(config: Config) {
     this.config = config;
     this.log = createLogger(config.domain);
-    this.authClient = AuthNATSClient.create(config.natsConfig);
 
     // AuthService comes for free
     if (config.domain !== 'auth') {
-      this.addApiClient('auth', this.authClient);
+      this.addApiClient('auth');
     }
 
     this.jobs = new Jobs(this);
@@ -145,8 +142,8 @@ export default abstract class DomainService {
     );
   }
 
-  protected addApiClient(name: string, client: DomainServiceApi): void {
-    this.apiClients.set(name, client);
+  protected addApiClient(name: string): void {
+    this.apiClients.set(name, DomainNATSClient.create(name, this.config.natsConfig));
   }
 
   protected getApiClients(): Map<string, DomainServiceApi> {
