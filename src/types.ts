@@ -40,6 +40,9 @@ export interface DomainServiceMessage extends ServiceMessage {
 
 export type DomainServiceHandler = (params: unknown) => Promise<unknown> | AsyncIterableIterator<unknown>;
 
+type NotificationHandler = (params: { type: string; info: unknown }) => void;
+
 export interface DomainServiceApi {
   handlers(): Promise<{ domain: string; handlers: string[] }>;
+  on(type: string, handler: NotificationHandler): void;
 }
