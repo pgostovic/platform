@@ -1,6 +1,7 @@
 import { createLogger } from '@phnq/log';
-import { ConnectionId, Message, MessageConnection, WebSocketMessageServer } from '@phnq/message';
+import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
+import { ConnectionId, WebSocketMessageServer } from '@phnq/message/WebSocketMessageServer';
 import http from 'http';
 import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
