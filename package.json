@@ -42,12 +42,12 @@
     "rimraf": "^2.7.1",
     "shelljs": "^0.8.3",
     "ts-jest": "^24.3.0",
-    "ts-node": "^8.5.4",
+    "ts-node": "^8.6.0",
     "typescript": "^3.7.4"
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
-    "@phnq/message": "^1.9.7",
+    "@phnq/message": "^1.10.0",
     "@phnq/model": "^1.6.13",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.7",

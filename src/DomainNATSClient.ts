@@ -1,7 +1,7 @@
 import { createLogger } from '@phnq/log';
 import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
-import { connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
+import { NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
 import DomainClient from './DomainClient';
@@ -26,8 +26,7 @@ export default class DomainNATSClient extends DomainClient {
   }
 
   protected async getMessageClient(): Promise<MessageConnection<ServiceMessage>> {
-    const natsClient = await connectNATS(this.natsConfig);
-    const natsTransport = await NATSTransport.create(natsClient, {
+    const natsTransport = await NATSTransport.create(this.natsConfig, {
       subscriptions: [ORIGIN],
       publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });

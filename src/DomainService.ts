@@ -5,7 +5,7 @@ import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { ModelId } from '@phnq/model';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
+import { NatsConnectionOptions } from 'ts-nats';
 
 import authenticate from './auth/authenticate';
 import DomainNATSClient from './DomainNATSClient';
@@ -42,7 +42,7 @@ interface Config {
 export default abstract class DomainService {
   private config: Config;
   private log: Logger;
-  private natsClient?: NATSClient;
+  private natsTransport?: NATSTransport;
   private apiConnection?: MessageConnection<DomainServiceMessage>;
   private handlers = new Map<string, DomainServiceHandler>();
   private apiClients = new Map<string, DomainServiceApi>();
@@ -69,21 +69,18 @@ export default abstract class DomainService {
     this.log('Starting...');
 
     this.log('Connecting to NATS...');
-    this.natsClient = await connectNATS(natsConfig);
-    this.log('Connected to NATS.');
-
     const signSalt = process.env.MESSAGE_SIGN_SALT;
     if (!signSalt) {
       this.log.warn(`MESSAGE_SIGN_SALT not set for domain service ${this.getDomain()}`);
     }
 
-    this.apiConnection = new MessageConnection(
-      await NATSTransport.create(this.natsClient, {
-        subscriptions: [`${domain}.*`],
-        publishSubject: mapPublishSubject,
-      }),
-      { signSalt },
-    );
+    this.natsTransport = await NATSTransport.create(natsConfig, {
+      subscriptions: [`${domain}.*`],
+      publishSubject: mapPublishSubject,
+    });
+    this.log('Connected to NATS.');
+
+    this.apiConnection = new MessageConnection(this.natsTransport, { signSalt });
 
     this.apiConnection.onReceive(message => this.onReceive(message));
 
@@ -94,8 +91,8 @@ export default abstract class DomainService {
 
   public stop(): void {
     this.log('Stopping...');
-    if (this.natsClient) {
-      this.natsClient.close();
+    if (this.natsTransport) {
+      this.natsTransport.close();
     }
   }
 

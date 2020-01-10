@@ -3,7 +3,7 @@ import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { ConnectionId, WebSocketMessageServer } from '@phnq/message/WebSocketMessageServer';
 import http from 'http';
-import { Client as NATSClient, connect as connectNATS, NatsConnectionOptions } from 'ts-nats';
+import { NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
 import { DomainServiceMessage, ServiceMessage } from './types';
@@ -26,7 +26,7 @@ export default class ApiService {
 
   private config: Config;
   private httpServer: http.Server;
-  private natsClient?: NATSClient;
+  private natsTransport?: NATSTransport;
   private messageServer: WebSocketMessageServer<ServiceMessage>;
   private servicesConnection?: MessageConnection<DomainServiceMessage>;
 
@@ -51,27 +51,25 @@ export default class ApiService {
     log('Server listening on port %d', port);
 
     log('Connecting to NATS...');
-    this.natsClient = await connectNATS(natsConfig);
-    log('Connected to NATS.');
-
-    const natsTransport = await NATSTransport.create(this.natsClient, {
+    this.natsTransport = await NATSTransport.create(natsConfig, {
       subscriptions: [ORIGIN, 'notification'],
       publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });
+    log('Connected to NATS.');
 
     const signSalt = process.env.MESSAGE_SIGN_SALT;
     if (!signSalt) {
       log.warn('MESSAGE_SIGN_SALT not set');
     }
 
-    this.servicesConnection = new MessageConnection(natsTransport, { signSalt });
+    this.servicesConnection = new MessageConnection(this.natsTransport, { signSalt });
     this.servicesConnection.onReceive(message => this.onReceiveDomainMessage(message));
   }
 
   public async stop(): Promise<void> {
     log('Stopping server...');
-    if (this.natsClient) {
-      this.natsClient.close();
+    if (this.natsTransport) {
+      this.natsTransport.close();
     }
 
     await this.messageServer.close();
