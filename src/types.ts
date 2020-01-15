@@ -13,36 +13,11 @@ export interface DomainServiceMessage extends ServiceMessage {
   accountId?: string;
 }
 
-/**
- * When a message comes from the APIService (i.e. via a user's websocket) it has a connectionId.
- * When a user authenticates via a token, that connectionId is stored on the user's session record
- * as auxId. A user is authenticated if a session record exists for the supplied token and the
- * session is not expired. TODO: Update the session's token occasionally? Maybe when a new connectionId
- * is used, create a new token and send it back to the client...
- *
- * A DomainServiceMessage message is essentially considered anonymous until it has an authChain. A
- * message may have a connectionId or an authChain or both. The connectionId can be used to create
- * the authChain by
- *
- *
- *
- * [
- *  accountId,
- *  Hash(accountId + timestamp),
- *  Hash(hash1 + accountId + timestamp),
- *  Hash(hash2 + hash1 + accountId + timestamp),
- *  Hash(hash3 + hash2 + hash1 + accountId + timestamp),
- * ]
- *
- * timestamp - most recent nearest 10 seconds +/- 10 sec.
- * Hash - some hash function with salt
- */
-
 export type DomainServiceHandler = (params: unknown) => Promise<unknown> | AsyncIterableIterator<unknown>;
 
-type NotificationHandler = (params: { type: string; info: unknown }) => void;
+export type NotificationHandler<T> = (params: { type: string; info: T }) => void;
 
 export interface DomainServiceApi {
   handlers(): Promise<{ domain: string; handlers: string[] }>;
-  on(type: string, handler: NotificationHandler): void;
+  on<T>(type: string, handler: NotificationHandler<T>): void;
 }

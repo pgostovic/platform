@@ -3,7 +3,7 @@ import { Logger } from '@phnq/log/logger';
 import { MessageConnection } from '@phnq/message';
 import prettyHrtime from 'pretty-hrtime';
 
-import { DomainServiceApi, ServiceMessage } from './types';
+import { DomainServiceApi, NotificationHandler, ServiceMessage } from './types';
 
 interface QueuedCall {
   key: string;
@@ -14,7 +14,7 @@ interface QueuedCall {
 
 interface NotficationHandlerEntry {
   type: string;
-  handler: ({ type, info }: { type: string; info: unknown }) => void;
+  handler: NotificationHandler<unknown>;
 }
 
 export default abstract class DomainClient {
@@ -49,9 +49,11 @@ export default abstract class DomainClient {
     return this.domain;
   }
 
-  public on(type: string, handler: ({ type, info }: { type: string; info: unknown }) => void): void {
+  public on(type: string, handler: NotificationHandler<unknown>): void {
     this.notificationHandlers.push({ type, handler });
   }
+
+  // public off(type: string) {}
 
   protected getProxy(): DomainServiceApi {
     return this.proxy;
