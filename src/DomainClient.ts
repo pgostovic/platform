@@ -53,7 +53,11 @@ export default abstract class DomainClient {
     this.notificationHandlers.push({ type, handler });
   }
 
-  // public off(type: string) {}
+  public off(type: string, handler?: NotificationHandler<unknown>): void {
+    this.notificationHandlers = this.notificationHandlers.filter(
+      entry => entry.type !== type || (handler && entry.handler !== handler),
+    );
+  }
 
   protected getProxy(): DomainServiceApi {
     return this.proxy;
