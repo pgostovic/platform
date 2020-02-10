@@ -25,16 +25,16 @@
   "license": "ISC",
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
-    "@types/jest": "^24.9.0",
-    "@types/node": "^12.12.24",
+    "@types/jest": "^24.9.1",
+    "@types/node": "^12.12.26",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "^0.8.6",
-    "@types/uuid": "^3.4.6",
+    "@types/uuid": "^3.4.7",
     "@types/validator": "^10.11.3",
     "@typescript-eslint/eslint-plugin": "^1.13.0",
     "@typescript-eslint/parser": "^1.13.0",
     "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.9.0",
+    "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
     "eslint-plugin-simple-import-sort": "^4.0.0",
     "jest": "^24.9.0",
@@ -43,19 +43,19 @@
     "shelljs": "^0.8.3",
     "ts-jest": "^24.3.0",
     "ts-node": "^8.6.2",
-    "typescript": "^3.7.4"
+    "typescript": "^3.7.5"
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
-    "@phnq/message": "^1.10.1",
+    "@phnq/message": "^1.10.2",
     "@phnq/model": "^1.6.14",
     "@types/cls-hooked": "^4.3.0",
-    "bcrypt": "^3.0.7",
+    "bcrypt": "^3.0.8",
     "cls-hooked": "^4.2.2",
     "crypto-random-string": "^3.1.0",
     "pretty-hrtime": "^1.0.3",
-    "tedis": "^0.1.10",
-    "uuid": "^3.3.3",
+    "tedis": "^0.1.12",
+    "uuid": "^3.4.0",
     "validator": "^11.1.0"
   }
 }
