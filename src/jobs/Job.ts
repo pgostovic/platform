@@ -1,4 +1,4 @@
-import { field, HasId, Model, ModelId, search } from '@phnq/model';
+import { field, Model, ModelId, search } from '@phnq/model';
 import Cursor from '@phnq/model/Cursor';
 
 class Job extends Model {
@@ -6,7 +6,7 @@ class Job extends Model {
     return search(Job, { nextRunTime: { $lte: new Date() }, lastRunTime: { $exists: false } });
   }
 
-  public static async nextJob(): Promise<(Job & HasId) | undefined> {
+  public static async nextJob(): Promise<Job | undefined> {
     return search(Job, { lastRunTime: { $exists: false } }, { sort: [['nextRunTime', 1]], limit: 1 }).first();
   }
 

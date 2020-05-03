@@ -7,12 +7,12 @@ import Session from '../model/Session';
 
 const authenticate: authenticate = async ({ token }) => {
   const context = DomainServiceContext.get();
-  const session = await search(Session, { token }).first();
+  let session = await search(Session, { token }).first();
   if (session && session.expiry.getTime() > Date.now()) {
     const connectionId = context.getConnectionId();
     if (session.auxId !== connectionId && connectionId) {
       session.auxId = connectionId;
-      await session.save();
+      session = await session.save();
     }
     return (await session.account).authStatus;
   }

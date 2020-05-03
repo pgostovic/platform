@@ -20,8 +20,11 @@ const createSession: createSessionWithCode = async ({ code }) => {
       throw new Anomaly('Invalid or expired code');
     }
 
-    const session = new Session(account.id as string, new Date(Date.now() + AUTH_CODE_SESSION_EXPIRY), connectionId);
-    await session.save();
+    const session = await new Session(
+      account.id as string,
+      new Date(Date.now() + AUTH_CODE_SESSION_EXPIRY),
+      connectionId,
+    ).save();
 
     return { token: session.token, authStatus: account.authStatus };
   }

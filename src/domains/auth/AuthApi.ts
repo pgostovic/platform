@@ -1,4 +1,4 @@
-import { HasId, ModelId } from '@phnq/model';
+import { ModelId } from '@phnq/model';
 
 import { AuthStatus, DomainServiceApi } from '../../types';
 import Account from './model/account';
@@ -22,7 +22,7 @@ export type authenticateConnection = () => Promise<{ valid: boolean; accountId: 
 
 export type createAccount = ({ email }: { email: string }) => Promise<AuthStatus>;
 
-export type getAccount = () => Promise<Account & HasId>;
+export type getAccount = () => Promise<Account>;
 
 export type createSession = ({
   email,

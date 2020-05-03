@@ -1,6 +1,6 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
-import { Data, HasId } from '@phnq/model';
+import { Data } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
@@ -28,10 +28,9 @@ class Jobs {
     this.runReadyJobs();
   }
 
-  public async schedule(jobDesc: JobDescripton, type: string, info: unknown, account: Account & HasId): Promise<void> {
+  public async schedule(jobDesc: JobDescripton, type: string, info: unknown, account: Account): Promise<void> {
     const now = new Date();
-    const job = new Job(account.id, type, info, jobDesc.runTime || now);
-    await job.save();
+    const job = await new Job(account.id, type, info, jobDesc.runTime || now).save();
     this.log('Scheduled job %s -- %s', type, job.id);
 
     if (job.nextRunTime <= now) {
@@ -70,8 +69,8 @@ class Jobs {
           job.error = err.message;
         }
         job.lastRunTime = new Date();
-        await job.save();
-        this.log('Finished job: %s', job.id);
+        const savedJob = await job.save();
+        this.log('Finished job: %s', savedJob.id);
       }
     } finally {
       this.scheduleNextJobsRun();

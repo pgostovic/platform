@@ -11,10 +11,10 @@ import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
 const setPassword: setPassword = async ({ password }) => {
   const session = await search(Session, { auxId: DomainServiceContext.get().getConnectionId() }).first();
   if (session) {
-    const account = await session.account;
+    let account = await session.account;
     account.password = await bcrypt.hash(password, 5);
     account.authStatus.requirePasswordChange = false;
-    await account.save();
+    account = await account.save();
 
     if (session.expiry.getTime() - Date.now() < AUTH_CODE_EXPIRY) {
       session.expiry = new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY);
