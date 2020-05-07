@@ -1,6 +1,6 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
-import { Data } from '@phnq/model';
+import { ModelData } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
@@ -9,7 +9,7 @@ import uuid = require('uuid');
 
 export const JOB_KEY = uuid().replace(/[^\w]/g, '');
 
-export interface JobDescripton extends Data {
+export interface JobDescripton extends ModelData {
   runTime?: Date;
 }
 

@@ -6,4 +6,4 @@ COPY . /app
 
 RUN npm i --production
 
-CMD ["node", "main/auth"]
+CMD ["node", "--inspect=0.0.0.0:9229", "main/auth"]

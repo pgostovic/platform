@@ -10,4 +10,4 @@ EXPOSE 80
 
 ENV PORT 80
 
-CMD ["node", "main/api"]
+CMD ["node", "--inspect=0.0.0.0:9229", "main/api"]
