@@ -167,25 +167,28 @@ export default abstract class DomainService {
 
     handlerPaths.forEach(
       async (handlerPath): Promise<void> => {
-        new Set(
-          (await fs.readdir(handlerPath)).map((name): string => path.basename(name).replace(/\.(d\.ts|js|ts)$/, '')),
-        ).forEach(
-          async (type): Promise<void> => {
-            let relHandlerPath = path.relative(__dirname, handlerPath);
-            if (relHandlerPath[0] !== '.') {
-              relHandlerPath = `./${relHandlerPath}`;
+        let relHandlerPath = path.relative(__dirname, handlerPath);
+        if (relHandlerPath[0] !== '.') {
+          relHandlerPath = `./${relHandlerPath}`;
+        }
+
+        const handlerNames = (await fs.readdir(handlerPath))
+          .filter(name => name.match(/^\S+\.js$/))
+          .map(name => path.basename(name, '.js'));
+
+        handlerNames.forEach(async handlerName => {
+          try {
+            const handler = (await import(`${relHandlerPath}/${handlerName}`)).default as DomainServiceHandler;
+            this.handlers.set(handlerName, handler);
+            this.log('Registered handler: %s', handlerName);
+          } catch (err) {
+            if (err.code !== 'MODULE_NOT_FOUND') {
+              this.log.warn('Not a valid handler: %s', `${relHandlerPath}/${handlerName}`);
+            } else {
+              this.log.warn('Not a valid handler: %s', `${relHandlerPath}/${handlerName}`, err);
             }
-            try {
-              const handler = (await import(`${relHandlerPath}/${type}`)).default as DomainServiceHandler;
-              this.handlers.set(type, handler);
-              this.log('Registered handler: %s', type);
-            } catch (err) {
-              if (err.code !== 'MODULE_NOT_FOUND') {
-                this.log.warn('Not a valid handler: %s', `${relHandlerPath}/${type}`);
-              }
-            }
-          },
-        );
+          }
+        });
       },
     );
   }
