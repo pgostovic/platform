@@ -26,9 +26,9 @@
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
     "@types/jest": "^24.9.1",
-    "@types/node": "^12.12.38",
+    "@types/node": "^12.12.39",
     "@types/pretty-hrtime": "^1.0.0",
-    "@types/shelljs": "^0.8.7",
+    "@types/shelljs": "^0.8.8",
     "@types/uuid": "^3.4.9",
     "@types/validator": "^10.11.3",
     "@typescript-eslint/eslint-plugin": "^1.13.0",
@@ -43,11 +43,11 @@
     "shelljs": "^0.8.4",
     "ts-jest": "^24.3.0",
     "ts-node": "^8.10.1",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.2"
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
-    "@phnq/message": "^1.10.4",
+    "@phnq/message": "^1.10.5",
     "@phnq/model": "^1.7.1",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.8",
