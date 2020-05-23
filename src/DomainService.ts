@@ -3,6 +3,7 @@ import { Logger } from '@phnq/log/logger';
 import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { ModelId } from '@phnq/model';
+import { DataStore } from '@phnq/model/Datastore';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NatsConnectionOptions } from 'ts-nats';
@@ -46,10 +47,12 @@ export default abstract class DomainService {
   private apiConnection?: MessageConnection<DomainServiceMessage>;
   private handlers = new Map<string, DomainServiceHandler>();
   private apiClients = new Map<string, DomainServiceApi>();
+  private datastore?: DataStore;
   private jobs: Jobs;
 
-  protected constructor(config: Config) {
+  protected constructor(config: Config, datastore?: DataStore) {
     this.config = config;
+    this.datastore = datastore;
     this.log = createLogger(config.domain);
 
     // AuthService comes for free
@@ -58,6 +61,10 @@ export default abstract class DomainService {
     }
 
     this.jobs = new Jobs(this);
+  }
+
+  public getDataStore(): DataStore | undefined {
+    return this.datastore;
   }
 
   public getDomain(): string {

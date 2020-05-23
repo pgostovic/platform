@@ -4,7 +4,7 @@ import { ModelData } from '@phnq/model';
 
 import Account from '../domains/auth/model/account';
 import DomainService from '../DomainService';
-import Job from './Job';
+import jobFactory from './jobFactory';
 import uuid = require('uuid');
 
 export const JOB_KEY = uuid().replace(/[^\w]/g, '');
@@ -30,6 +30,7 @@ class Jobs {
 
   public async schedule(jobDesc: JobDescripton, type: string, info: unknown, account: Account): Promise<void> {
     const now = new Date();
+    const Job = this.getJobClass();
     const job = await new Job(account.id, type, info, jobDesc.runTime || now).save();
     this.log('Scheduled job %s -- %s', type, job.id);
 
@@ -40,11 +41,21 @@ class Jobs {
     }
   }
 
+  private getJobClass(): any {
+    const datastore = this.service.getDataStore();
+    if (!datastore) {
+      throw new Error(`Domain "${this.service.getDomain()}" does not have a datastore configured.`);
+    }
+
+    return jobFactory(datastore);
+  }
+
   private async scheduleNextJobsRun(): Promise<void> {
     if (this.nextJobRunTimeout) {
       clearTimeout(this.nextJobRunTimeout);
     }
 
+    const Job = this.getJobClass();
     const nextJob = await Job.nextJob();
     if (nextJob) {
       this.log('Next job: %s at %s', nextJob.type, nextJob.nextRunTime.toISOString());
@@ -60,6 +71,7 @@ class Jobs {
       clearTimeout(this.nextJobRunTimeout);
     }
 
+    const Job = this.getJobClass();
     try {
       for await (const job of Job.jobsReadyToRun().iterator) {
         this.log('Running job: %s', job.id);
