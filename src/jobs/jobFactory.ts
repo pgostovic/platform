@@ -1,14 +1,15 @@
-import { field, Model, ModelId, search } from '@phnq/model';
+import { datastore, field, Model, ModelId, search } from '@phnq/model';
 import Cursor from '@phnq/model/Cursor';
 import { DataStore } from '@phnq/model/Datastore';
 
 const jobClasses = new Map<DataStore, any>();
 
-export default (datastore: DataStore) => {
-  if (jobClasses.has(datastore)) {
-    return jobClasses.get(datastore);
+export default (ds: DataStore) => {
+  if (jobClasses.has(ds)) {
+    return jobClasses.get(ds);
   }
 
+  @datastore(ds)
   class Job extends Model {
     public static jobsReadyToRun(): Cursor<Job> {
       return search(Job, { nextRunTime: { $lte: new Date() }, lastRunTime: { $exists: false } });
@@ -34,7 +35,7 @@ export default (datastore: DataStore) => {
     }
   }
 
-  jobClasses.set(datastore, Job);
+  jobClasses.set(ds, Job);
 
-  return jobClasses.get(datastore);
+  return jobClasses.get(ds);
 };
