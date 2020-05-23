@@ -172,9 +172,13 @@ export default abstract class DomainService {
           relHandlerPath = `./${relHandlerPath}`;
         }
 
-        const handlerNames = (await fs.readdir(handlerPath))
-          .filter(name => name.match(/^\S+\.js$/))
-          .map(name => path.basename(name, '.js'));
+        const handlerNames = new Set(
+          (await fs.readdir(handlerPath))
+            .filter(name => !name.match(/^\S+\.d\.ts$/))
+            .filter(name => name.match(/^\S+\.[jt]s$/))
+            .map(name => path.basename(name, '.js'))
+            .map(name => path.basename(name, '.ts')),
+        );
 
         handlerNames.forEach(async handlerName => {
           try {
