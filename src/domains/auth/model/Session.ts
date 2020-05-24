@@ -1,11 +1,13 @@
-import { field, find, Model, ModelId } from '@phnq/model';
+import { datastore, field, find, Model, ModelId } from '@phnq/model';
 import uuid from 'uuid/v4';
 
+import AuthService from '../AuthService';
 import Account from './account';
 
 export const AUTH_CODE_SESSION_EXPIRY = 10 * 60 * 1000; // 10 minutes
 export const CREDENTIALS_SESSION_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+@datastore(AuthService.datastore)
 class Session extends Model {
   @field public readonly accountId: ModelId;
   @field public readonly token = uuid();

@@ -1,52 +1,44 @@
 import { createLogger } from '@phnq/log';
 import { addPersistObserver } from '@phnq/model';
 import AuditLogger from '@phnq/model/AuditLogger';
-import { DataStore } from '@phnq/model/Datastore';
 import { MongoDataStore } from '@phnq/model/datastores/MongoDataStore';
 import path from 'path';
-import { NatsConnectionOptions } from 'ts-nats';
 
 import { setDefaultCacheStore } from '../../cache';
 import RedisCacheStore from '../../cache/cachestores/RedisCacheStore';
 import DomainService from '../../DomainService';
+import { mongodbUri, natsConfig, redisConn } from './config';
 
 const log = createLogger('AuthService');
 
-interface Config {
-  natsConfig: NatsConnectionOptions;
-  mongodbUri: string;
-  redisConn: string;
-}
-
 export default class AuthService extends DomainService {
   public static domain = 'auth';
+  public static datastore = new MongoDataStore(mongodbUri);
 
-  public static async start(config: Config): Promise<void> {
-    const mongoDataStore = new MongoDataStore(config.mongodbUri);
-
+  public static async start(): Promise<void> {
     log('Creating indices...');
-    await mongoDataStore.createIndex('Account', { email: 1 }, { unique: true });
-    await mongoDataStore.createIndex('Account', { 'authCode.code': 1 }, {});
+    await this.datastore.createIndex('Account', { email: 1 }, { unique: true });
+    await this.datastore.createIndex('Account', { 'authCode.code': 1 }, {});
 
-    await mongoDataStore.createIndex('Session', { token: 1 }, {});
-    await mongoDataStore.createIndex('Session', { auxId: 1 }, {});
+    await this.datastore.createIndex('Session', { token: 1 }, {});
+    await this.datastore.createIndex('Session', { auxId: 1 }, {});
 
-    setDefaultCacheStore(new RedisCacheStore(config.redisConn));
+    setDefaultCacheStore(new RedisCacheStore(redisConn));
 
     const auditLogger = new AuditLogger();
     addPersistObserver(auditLogger);
 
-    await new AuthService(config, mongoDataStore).start();
+    await new AuthService().start();
   }
 
-  private constructor(config: Config, datastore: DataStore) {
+  private constructor() {
     super(
       {
         domain: AuthService.domain,
         handlerPaths: [path.resolve(__dirname, 'handlers')],
-        natsConfig: config.natsConfig,
+        natsConfig,
       },
-      datastore,
+      AuthService.datastore,
     );
   }
 }
