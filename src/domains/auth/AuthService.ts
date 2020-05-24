@@ -1,6 +1,5 @@
 import { createLogger } from '@phnq/log';
-import { addPersistObserver } from '@phnq/model';
-import AuditLogger from '@phnq/model/AuditLogger';
+import { datastore } from '@phnq/model';
 import { MongoDataStore } from '@phnq/model/datastores/MongoDataStore';
 import path from 'path';
 
@@ -8,6 +7,8 @@ import { setDefaultCacheStore } from '../../cache';
 import RedisCacheStore from '../../cache/cachestores/RedisCacheStore';
 import DomainService from '../../DomainService';
 import { mongodbUri, natsConfig, redisConn } from './config';
+import Account from './model/account';
+import Session from './model/Session';
 
 const log = createLogger('AuthService');
 
@@ -23,10 +24,10 @@ export default class AuthService extends DomainService {
     await this.datastore.createIndex('Session', { token: 1 }, {});
     await this.datastore.createIndex('Session', { auxId: 1 }, {});
 
-    setDefaultCacheStore(new RedisCacheStore(redisConn));
+    datastore(this.datastore)(Account);
+    datastore(this.datastore)(Session);
 
-    const auditLogger = new AuditLogger();
-    addPersistObserver(auditLogger);
+    setDefaultCacheStore(new RedisCacheStore(redisConn));
 
     await new AuthService().start();
   }
