@@ -1,6 +1,7 @@
 import { createLogger } from '@phnq/log';
-import { addPersistObserver, setDefaultDataStore } from '@phnq/model';
+import { addPersistObserver } from '@phnq/model';
 import AuditLogger from '@phnq/model/AuditLogger';
+import { DataStore } from '@phnq/model/Datastore';
 import { MongoDataStore } from '@phnq/model/datastores/MongoDataStore';
 import path from 'path';
 import { NatsConnectionOptions } from 'ts-nats';
@@ -30,21 +31,22 @@ export default class AuthService extends DomainService {
     await mongoDataStore.createIndex('Session', { token: 1 }, {});
     await mongoDataStore.createIndex('Session', { auxId: 1 }, {});
 
-    setDefaultDataStore(mongoDataStore);
-
     setDefaultCacheStore(new RedisCacheStore(config.redisConn));
 
     const auditLogger = new AuditLogger();
     addPersistObserver(auditLogger);
 
-    await new AuthService(config).start();
+    await new AuthService(config, mongoDataStore).start();
   }
 
-  private constructor(config: Config) {
-    super({
-      domain: AuthService.domain,
-      handlerPaths: [path.resolve(__dirname, 'handlers')],
-      natsConfig: config.natsConfig,
-    });
+  private constructor(config: Config, datastore: DataStore) {
+    super(
+      {
+        domain: AuthService.domain,
+        handlerPaths: [path.resolve(__dirname, 'handlers')],
+        natsConfig: config.natsConfig,
+      },
+      datastore,
+    );
   }
 }
