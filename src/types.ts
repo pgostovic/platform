@@ -11,6 +11,7 @@ export interface DomainServiceMessage extends ServiceMessage {
   origin: string;
   connectionId?: string;
   accountId?: string;
+  langs?: string[];
 }
 
 export type DomainServiceHandler = (params: unknown) => Promise<unknown> | AsyncIterableIterator<unknown>;

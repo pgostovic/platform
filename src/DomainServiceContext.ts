@@ -21,15 +21,16 @@ interface Params {
   apiConnection: MessageConnection<DomainServiceMessage>;
   connectionId?: string;
   accountId?: ModelId;
+  langs?: string[];
   jobKey?: string;
 }
 
 export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   public static set<T = unknown>(
-    { service, clients, apiConnection, connectionId, accountId, jobKey }: Params,
+    { service, clients, apiConnection, connectionId, accountId, langs, jobKey }: Params,
     fn: () => T,
   ): T {
-    const context = new DomainServiceContext(service, clients, apiConnection, connectionId, accountId, jobKey);
+    const context = new DomainServiceContext(service, clients, apiConnection, connectionId, accountId, langs, jobKey);
     return contextNS.runAndReturn(() => {
       contextNS.set('currentContext', context);
       return fn();
@@ -51,6 +52,7 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
   private readonly apiConnection: MessageConnection<DomainServiceMessage>;
   private connectionId?: string;
   private accountId?: ModelId;
+  private langs?: string[];
   private jobKey?: string;
   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
   public auth: AuthApi = {} as AuthApi;
@@ -61,12 +63,14 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
     apiConnection: MessageConnection<DomainServiceMessage>,
     connectionId?: string,
     accountId?: ModelId,
+    langs?: string[],
     jobKey?: string,
   ) {
     this.service = service;
     this.apiConnection = apiConnection;
     this.connectionId = connectionId;
     this.accountId = accountId;
+    this.langs = langs;
     this.jobKey = jobKey;
 
     for (const name of clients.keys()) {
@@ -94,6 +98,10 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
 
   public getAccountId(): ModelId | undefined {
     return this.accountId;
+  }
+
+  public getLangs(): string[] | undefined {
+    return this.langs;
   }
 
   /**

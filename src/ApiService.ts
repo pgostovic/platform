@@ -104,8 +104,18 @@ export default class ApiService {
   }
 
   private onConnect = async (connectionId: ConnectionId, req: http.IncomingMessage): Promise<void> => {
+    const acceptLangHeader = req.headers['accept-language'];
+    const conn = this.messageServer.getConnection(connectionId);
+    if (conn && acceptLangHeader) {
+      conn.setData(
+        'langs',
+        acceptLangHeader.split(',').map(lang => lang.split(';')[0]),
+      );
+    }
+
     if (authTokenCookie) {
       const cookie = getParsedCookie(req.headers.cookie || '');
+
       const token = cookie[authTokenCookie];
       if (token) {
         try {
@@ -124,8 +134,11 @@ export default class ApiService {
     connectionId: ConnectionId,
     { type, info }: ServiceMessage,
   ): Promise<ServiceMessage | AsyncIterableIterator<ServiceMessage>> => {
+    const conn = this.messageServer.getConnection(connectionId);
+    const langs = conn ? conn.getData<string[]>('langs') : [];
+
     const servicesConnection = this.servicesConnection as MessageConnection<DomainServiceMessage>;
-    const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId };
+    const serviceRequest: DomainServiceMessage = { type, info, origin: ORIGIN, connectionId, langs };
     const serviceResponse = await servicesConnection.request(serviceRequest);
 
     if (

@@ -204,12 +204,20 @@ export default abstract class DomainService {
     );
   }
 
+  /**
+   * Override this to set up per-handler actions.
+   */
+  protected handlerWillBeInvoked(): Promise<void> {
+    return Promise.resolve();
+  }
+
   private onReceive = async ({
     type,
     info,
     connectionId,
     accountId,
     origin,
+    langs,
   }: DomainServiceMessage): Promise<DomainServiceMessage | AsyncIterableIterator<DomainServiceMessage>> =>
     DomainServiceContext.set(
       {
@@ -218,6 +226,7 @@ export default abstract class DomainService {
         apiConnection: this.apiConnection!,
         connectionId,
         accountId,
+        langs,
       },
       async () => {
         const localType = this.toLocalType(type);
@@ -226,6 +235,8 @@ export default abstract class DomainService {
         if (!handler) {
           throw new Error(`handler type not supported: ${localType}`);
         }
+
+        await this.handlerWillBeInvoked();
 
         const resp = await handler(info);
 
