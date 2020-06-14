@@ -93,7 +93,11 @@ export default abstract class DomainService {
 
     await this.scanForHandlers();
 
-    await this.jobs.start();
+    if (this.datastore) {
+      await this.jobs.start();
+    } else {
+      this.log('Starting without Jobs support: no datastore configured');
+    }
   }
 
   public stop(): void {
