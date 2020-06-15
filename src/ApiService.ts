@@ -93,12 +93,21 @@ export default class ApiService {
     info,
     connectionId,
   }: DomainServiceMessage): Promise<DomainServiceMessage> {
-    if (!connectionId) {
-      throw new Error('No connectionId.');
-    }
-    const conn = this.messageServer.getConnection(connectionId);
-    if (conn) {
-      conn.send({ type, info });
+    const broadcastType = process.env.MESSAGE_BROADCAST_TYPE || 'broadcast';
+
+    // If connectionId is set, then push to client connection.
+    if (connectionId) {
+      const conn = this.messageServer.getConnection(connectionId);
+      if (conn) {
+        conn.send({ type, info });
+      }
+    } else if (this.servicesConnection && type.indexOf(broadcastType) === 0) {
+      // send broadcast to NATS.
+      // type will be "MESSAGE_BROADCAST_TYPE.domain.type"
+      this.servicesConnection.send({ type, info, origin: ORIGIN });
+    } else {
+      log.error('Unhandled domain message', type, info);
+      throw new Error(`Unhandled domain message: ${type}`);
     }
     return { type: 'notification-sent', info: {}, origin: ORIGIN, connectionId: '' };
   }

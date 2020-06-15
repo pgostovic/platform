@@ -26,6 +26,8 @@ const createSession: createSessionWithCode = async ({ code }) => {
       connectionId,
     ).save();
 
+    context.broadcast('connected', { accountId: session.accountId });
+
     return { token: session.token, authStatus: account.authStatus };
   }
 

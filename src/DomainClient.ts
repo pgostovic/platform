@@ -20,7 +20,7 @@ interface NotficationHandlerEntry {
 export default abstract class DomainClient {
   private domain: string;
   protected log: Logger;
-  private messageClient?: MessageConnection<ServiceMessage>;
+  protected messageClient?: MessageConnection<ServiceMessage>;
   private typesLoaded = false;
   private q: QueuedCall[] = [];
   private proxy: DomainServiceApi;
@@ -63,14 +63,14 @@ export default abstract class DomainClient {
     return this.proxy;
   }
 
-  protected abstract async getMessageClient(): Promise<MessageConnection<ServiceMessage>>;
+  protected abstract async createMessageClient(): Promise<MessageConnection<ServiceMessage>>;
 
   protected createRequestMessage(type: string, data: unknown): ServiceMessage {
     return { info: data, type: `${this.domain}.${type}` };
   }
 
   protected async initialize(): Promise<void> {
-    const messageClient = await this.getMessageClient();
+    const messageClient = await this.createMessageClient();
     this.messageClient = messageClient;
 
     messageClient.onConversation = (c): void => {
@@ -87,8 +87,14 @@ export default abstract class DomainClient {
     };
 
     messageClient.onReceive = async ({ type, info }) => {
-      const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
-      this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
+      const broadcastType = process.env.MESSAGE_BROADCAST_TYPE || 'broadcast';
+      if (type.indexOf(broadcastType) === 0) {
+        const localType = (type || '').replace(new RegExp(`^${broadcastType}.${this.domain}\.`), '');
+        this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
+      } else {
+        const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
+        this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
+      }
     };
 
     const defaultTimeout = messageClient.responseTimeout;

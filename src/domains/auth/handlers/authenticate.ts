@@ -13,6 +13,8 @@ const authenticate: authenticate = async ({ token }) => {
     if (session.auxId !== connectionId && connectionId) {
       session.auxId = connectionId;
       session = await session.save();
+
+      context.broadcast('connected', { accountId: session.accountId });
     }
     return (await session.account).authStatus;
   }

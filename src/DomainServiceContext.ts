@@ -146,4 +146,14 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
       );
     }
   }
+
+  public async broadcast(type: string, info: unknown): Promise<void> {
+    const broadcastType = process.env.MESSAGE_BROADCAST_TYPE || 'broadcast';
+
+    return this.apiConnection.send({
+      type: `${broadcastType}.${this.service.getDomain()}.${type}`,
+      info,
+      origin: '',
+    });
+  }
 }

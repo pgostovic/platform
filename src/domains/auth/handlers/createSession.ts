@@ -21,6 +21,9 @@ const createSession: createSession = async ({ email, password }) => {
       new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY),
       connectionId,
     ).save();
+
+    context.broadcast('connected', { accountId: session.accountId });
+
     return { token: session.token, authStatus: account.authStatus };
   }
   throw new Anomaly('Invalid Credentials');

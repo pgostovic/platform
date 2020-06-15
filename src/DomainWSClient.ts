@@ -18,7 +18,7 @@ export default class DomainWSClient extends DomainClient {
     this.url = url;
   }
 
-  protected async getMessageClient(): Promise<MessageConnection<ServiceMessage>> {
+  protected async createMessageClient(): Promise<MessageConnection<ServiceMessage>> {
     return WebSocketMessageClient.create<ServiceMessage>(this.url);
   }
 }

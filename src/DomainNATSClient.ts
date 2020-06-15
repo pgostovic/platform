@@ -25,10 +25,10 @@ export default class DomainNATSClient extends DomainClient {
     this.log = createLogger(`NATSClient.${domain}`);
   }
 
-  protected async getMessageClient(): Promise<MessageConnection<ServiceMessage>> {
+  protected async createMessageClient(): Promise<MessageConnection<ServiceMessage>> {
     const broadcastType = process.env.MESSAGE_BROADCAST_TYPE || 'broadcast';
     const natsTransport = await NATSTransport.create(this.natsConfig, {
-      subscriptions: [ORIGIN, broadcastType],
+      subscriptions: [ORIGIN, `${broadcastType}.*`],
       publishSubject: (message: Message): string => (message.p as DomainServiceMessage).type as string,
     });
     const signSalt = process.env.MESSAGE_SIGN_SALT;
