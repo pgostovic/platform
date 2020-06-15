@@ -63,7 +63,7 @@ export default class ApiService {
     }
 
     this.servicesConnection = new MessageConnection(this.natsTransport, { signSalt });
-    this.servicesConnection.onReceive(message => this.onReceiveDomainMessage(message));
+    this.servicesConnection.onReceive = message => this.onReceiveDomainMessage(message);
   }
 
   public async stop(): Promise<void> {

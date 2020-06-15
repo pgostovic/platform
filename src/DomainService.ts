@@ -89,7 +89,7 @@ export default abstract class DomainService {
 
     this.apiConnection = new MessageConnection(this.natsTransport, { signSalt });
 
-    this.apiConnection.onReceive(message => this.onReceive(message));
+    this.apiConnection.onReceive = message => this.onReceive(message);
 
     await this.scanForHandlers();
 

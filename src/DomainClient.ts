@@ -71,7 +71,9 @@ export default abstract class DomainClient {
 
   protected async initialize(): Promise<void> {
     const messageClient = await this.getMessageClient();
-    messageClient.onConversation((c): void => {
+    this.messageClient = messageClient;
+
+    messageClient.onConversation = (c): void => {
       this.log.groupCollapsed(
         `${(c.request.p as ServiceMessage).type} (${
           c.responses.length === 0 ? 'one-way' : prettyHrtime(c.responses.slice(-1)[0].time)
@@ -82,18 +84,16 @@ export default abstract class DomainClient {
           });
         },
       );
-    });
+    };
 
-    this.messageClient = messageClient;
-
-    this.messageClient.onReceive(async ({ type, info }) => {
+    messageClient.onReceive = async ({ type, info }) => {
       const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
       this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
-    });
+    };
 
-    const defaultTimeout = this.messageClient.responseTimeout;
+    const defaultTimeout = messageClient.responseTimeout;
     // Set the timeout to a low value when getting handlers so it fails quickly.
-    this.messageClient.responseTimeout = 1000;
+    messageClient.responseTimeout = 1000;
 
     let result: { handlers: string[] } | undefined = undefined;
 
@@ -101,7 +101,7 @@ export default abstract class DomainClient {
     let numTries = 0;
     while (!result) {
       try {
-        const { info } = await this.messageClient.requestOne(this.createRequestMessage('handlers', {}));
+        const { info } = await messageClient.requestOne(this.createRequestMessage('handlers', {}));
         result = info as { handlers: string[] };
       } catch (err) {
         this.log('Error getting handlers:', err);
