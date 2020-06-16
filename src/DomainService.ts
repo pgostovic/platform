@@ -54,12 +54,6 @@ export default abstract class DomainService {
     this.config = config;
     this.datastore = datastore;
     this.log = createLogger(config.domain);
-
-    // AuthService comes for free
-    if (config.domain !== 'auth') {
-      this.addApiClient('auth');
-    }
-
     this.jobs = new Jobs(this);
   }
 
@@ -97,6 +91,11 @@ export default abstract class DomainService {
       await this.jobs.start();
     } else {
       this.log('Starting without Jobs support: no datastore configured');
+    }
+
+    // AuthService comes for free
+    if (this.config.domain !== 'auth') {
+      this.addApiClient('auth');
     }
   }
 
