@@ -151,7 +151,15 @@ export default abstract class DomainService {
   }
 
   protected addApiClient(name: string): void {
-    this.apiClients.set(name, DomainNATSClient.create(name, this.config.natsConfig));
+    this.apiClients.set(
+      name,
+      DomainNATSClient.create(name, {
+        nats: this.config.natsConfig,
+        service: this,
+        apiConnection: this.apiConnection,
+        apiClients: this.apiClients,
+      }),
+    );
   }
 
   protected getApiClients(): Map<string, DomainServiceApi> {

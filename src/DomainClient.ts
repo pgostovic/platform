@@ -69,6 +69,8 @@ export default abstract class DomainClient {
     return { info: data, type: `${this.domain}.${type}` };
   }
 
+  protected abstract handleNotification(type: string, info: unknown, handler: NotificationHandler<unknown>): void;
+
   protected async initialize(): Promise<void> {
     const messageClient = await this.createMessageClient();
     this.messageClient = messageClient;
@@ -88,12 +90,12 @@ export default abstract class DomainClient {
 
     messageClient.onReceive = async ({ type, info }) => {
       const broadcastType = process.env.MESSAGE_BROADCAST_TYPE || 'broadcast';
-      if (type.indexOf(broadcastType) === 0) {
-        const localType = (type || '').replace(new RegExp(`^${broadcastType}.${this.domain}\.`), '');
-        this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
-      } else {
-        const localType = (type || '').replace(new RegExp(`^${this.domain}\.`), '');
-        this.notificationHandlers.filter(h => h.type === localType).forEach(h => h.handler({ type, info }));
+      const m = type.match(new RegExp(`^(${broadcastType}\.)?${this.domain}\.(.+)`));
+      if (m) {
+        const localType = m[2];
+        this.notificationHandlers
+          .filter(h => h.type === localType)
+          .forEach(h => this.handleNotification(type, info, h.handler));
       }
     };
 
