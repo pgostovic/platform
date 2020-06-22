@@ -1,6 +1,7 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { MessageConnection } from '@phnq/message';
+import { Model } from '@phnq/model';
 import prettyHrtime from 'pretty-hrtime';
 
 import { DomainServiceApi, NotificationHandler, ServiceMessage } from './types';
@@ -139,11 +140,11 @@ export default abstract class DomainClient {
           ) {
             return (async function*(): AsyncIterableIterator<unknown> {
               for await (const resp of response as AsyncIterableIterator<ServiceMessage>) {
-                yield resp.info;
+                yield Model.parse(resp.info);
               }
             })();
           } else {
-            return (response as ServiceMessage).info;
+            return Model.parse((response as ServiceMessage).info);
           }
         },
         writable: true,
