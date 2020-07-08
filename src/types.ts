@@ -1,3 +1,5 @@
+import { ModelId } from '@phnq/model';
+
 export interface AuthStatus {
   requirePasswordChange: boolean;
 }
@@ -10,7 +12,7 @@ export interface ServiceMessage {
 export interface DomainServiceMessage extends ServiceMessage {
   origin: string;
   connectionId?: string;
-  accountId?: string;
+  accountId?: ModelId;
   langs?: string[];
 }
 

@@ -17,7 +17,7 @@ const createSession: createSession = async ({ email, password }) => {
 
   if (account && account.password && (await bcrypt.compare(password, account.password))) {
     const session = await new Session(
-      account.id as string,
+      account.id,
       new Date(Date.now() + CREDENTIALS_SESSION_EXPIRY),
       connectionId,
     ).save();

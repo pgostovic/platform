@@ -27,7 +27,7 @@
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
     "@types/jest": "^24.9.1",
-    "@types/node": "^12.12.47",
+    "@types/node": "^12.12.48",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "^0.8.8",
     "@types/uuid": "^3.4.9",
@@ -44,12 +44,12 @@
     "shelljs": "^0.8.4",
     "ts-jest": "^24.3.0",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.6"
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
     "@phnq/message": "^1.11.0",
-    "@phnq/model": "^1.7.7",
+    "@phnq/model": "^1.9.1",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.8",
     "cls-hooked": "^4.2.2",
