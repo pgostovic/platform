@@ -96,7 +96,7 @@ export default abstract class DomainClient {
         const localType = m[2];
         this.notificationHandlers
           .filter(h => h.type === localType)
-          .forEach(h => this.handleNotification(type, info, h.handler));
+          .forEach(h => this.handleNotification(type, Model.parse(info), h.handler));
       }
     };
 
