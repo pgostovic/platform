@@ -49,7 +49,7 @@
   "dependencies": {
     "@phnq/log": "^1.1.4",
     "@phnq/message": "^1.11.0",
-    "@phnq/model": "^1.9.1",
+    "@phnq/model": "^1.9.2",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.8",
     "cls-hooked": "^4.2.2",
