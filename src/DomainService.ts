@@ -2,7 +2,7 @@ import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { AnomalyMessage, ErrorMessage, Message, MessageConnection, MessageType } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
-import { ModelId } from '@phnq/model';
+import { Model, ModelId } from '@phnq/model';
 import { DataStore } from '@phnq/model/Datastore';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -13,6 +13,8 @@ import DomainNATSClient from './DomainNATSClient';
 import DomainServiceContext from './DomainServiceContext';
 import Jobs, { JOB_KEY, JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
+
+MessageConnection.defaultUnmarshalPayload = payload => Model.parse(payload);
 
 const HANDLERS = 'handlers';
 

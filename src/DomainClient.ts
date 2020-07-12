@@ -6,6 +6,8 @@ import prettyHrtime from 'pretty-hrtime';
 
 import { DomainServiceApi, NotificationHandler, ServiceMessage } from './types';
 
+MessageConnection.defaultUnmarshalPayload = payload => Model.parse(payload);
+
 interface QueuedCall {
   key: string;
   args: unknown[];
@@ -96,7 +98,7 @@ export default abstract class DomainClient {
         const localType = m[2];
         this.notificationHandlers
           .filter(h => h.type === localType)
-          .forEach(h => this.handleNotification(type, Model.parse(info), h.handler));
+          .forEach(h => this.handleNotification(type, info, h.handler));
       }
     };
 
@@ -140,11 +142,11 @@ export default abstract class DomainClient {
           ) {
             return (async function*(): AsyncIterableIterator<unknown> {
               for await (const resp of response as AsyncIterableIterator<ServiceMessage>) {
-                yield Model.parse(resp.info);
+                yield resp.info;
               }
             })();
           } else {
-            return Model.parse((response as ServiceMessage).info);
+            return (response as ServiceMessage).info;
           }
         },
         writable: true,
