@@ -1,7 +1,7 @@
 import { ModelId } from '@phnq/model';
 
 import { AuthStatus, DomainServiceApi } from '../../types';
-import Account from './model/account';
+import Account from './model/Account';
 
 export interface AuthApi extends DomainServiceApi {
   authenticate: authenticate;

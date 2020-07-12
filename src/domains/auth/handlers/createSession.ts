@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 
 import DomainServiceContext from '../../../DomainServiceContext';
 import { createSession } from '../AuthApi';
-import Account from '../model/account';
+import Account from '../model/Account';
 import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
 
 const createSession: createSession = async ({ email, password }) => {

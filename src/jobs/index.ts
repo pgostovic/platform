@@ -2,7 +2,7 @@ import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { ModelData } from '@phnq/model';
 
-import Account from '../domains/auth/model/account';
+import Account from '../domains/auth/model/Account';
 import DomainService from '../DomainService';
 import jobFactory from './jobFactory';
 import uuid = require('uuid');

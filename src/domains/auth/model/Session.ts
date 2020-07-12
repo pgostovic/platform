@@ -1,7 +1,7 @@
 import { field, find, Model, ModelId } from '@phnq/model';
 import uuid from 'uuid/v4';
 
-import Account from './account';
+import Account from './Account';
 
 export const AUTH_CODE_SESSION_EXPIRY = 10 * 60 * 1000; // 10 minutes
 export const CREDENTIALS_SESSION_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 days

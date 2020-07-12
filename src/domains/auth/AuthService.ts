@@ -7,7 +7,7 @@ import { setDefaultCacheStore } from '../../cache';
 import RedisCacheStore from '../../cache/cachestores/RedisCacheStore';
 import DomainService from '../../DomainService';
 import { mongodbUri, natsConfig, redisConn } from './config';
-import Account from './model/account';
+import Account from './model/Account';
 import Session from './model/Session';
 
 const log = createLogger('AuthService');

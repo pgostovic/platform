@@ -3,7 +3,7 @@ import { search } from '@phnq/model';
 
 import DomainServiceContext from '../../../DomainServiceContext';
 import { createSessionWithCode } from '../AuthApi';
-import Account from '../model/account';
+import Account from '../model/Account';
 import Session, { AUTH_CODE_SESSION_EXPIRY } from '../model/Session';
 
 const createSession: createSessionWithCode = async ({ code }) => {

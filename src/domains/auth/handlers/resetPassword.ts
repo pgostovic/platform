@@ -5,7 +5,7 @@ import cryptoRandomString from 'crypto-random-string';
 import isEmail from 'validator/lib/isEmail';
 
 import { resetPassword } from '../AuthApi';
-import Account, { AUTH_CODE_EXPIRY } from '../model/account';
+import Account, { AUTH_CODE_EXPIRY } from '../model/Account';
 
 const log = createLogger('resetPassword');
 
