@@ -2,6 +2,7 @@ import { createLogger } from '@phnq/log';
 import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
 import { ConnectionId, WebSocketMessageServer } from '@phnq/message/WebSocketMessageServer';
+import { Model } from '@phnq/model';
 import http from 'http';
 import { NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
@@ -63,6 +64,7 @@ export default class ApiService {
     }
 
     this.servicesConnection = new MessageConnection(this.natsTransport, { signSalt });
+    this.servicesConnection.unmarshalPayload = Model.parse;
     this.servicesConnection.onReceive = message => this.onReceiveDomainMessage(message);
   }
 

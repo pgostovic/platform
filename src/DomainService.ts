@@ -14,8 +14,6 @@ import DomainServiceContext from './DomainServiceContext';
 import Jobs, { JOB_KEY, JobDescripton } from './jobs';
 import { DomainServiceApi, DomainServiceHandler, DomainServiceMessage } from './types';
 
-MessageConnection.defaultUnmarshalPayload = payload => Model.parse(payload);
-
 const HANDLERS = 'handlers';
 
 const mapPublishSubject = (message: Message): string => {
@@ -84,6 +82,7 @@ export default abstract class DomainService {
     this.log('Connected to NATS.');
 
     this.apiConnection = new MessageConnection(this.natsTransport, { signSalt });
+    this.apiConnection.unmarshalPayload = Model.parse;
 
     this.apiConnection.onReceive = message => this.onReceive(message);
 

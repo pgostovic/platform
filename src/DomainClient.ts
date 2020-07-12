@@ -1,12 +1,9 @@
 import { createLogger } from '@phnq/log';
 import { Logger } from '@phnq/log/logger';
 import { MessageConnection } from '@phnq/message';
-import { Model } from '@phnq/model';
 import prettyHrtime from 'pretty-hrtime';
 
 import { DomainServiceApi, NotificationHandler, ServiceMessage } from './types';
-
-MessageConnection.defaultUnmarshalPayload = payload => Model.parse(payload);
 
 interface QueuedCall {
   key: string;

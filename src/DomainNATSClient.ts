@@ -1,6 +1,7 @@
 import { createLogger } from '@phnq/log';
 import { Message, MessageConnection } from '@phnq/message';
 import { NATSTransport } from '@phnq/message/transports/NATSTransport';
+import { Model } from '@phnq/model';
 import { NatsConnectionOptions } from 'ts-nats';
 import uuid from 'uuid/v4';
 
@@ -44,7 +45,9 @@ export default class DomainNATSClient extends DomainClient {
       this.log.warn(`MESSAGE_SIGN_SALT not set for domain client ${this.getDomain()}`);
     }
 
-    return new MessageConnection(natsTransport, { signSalt });
+    const conn = new MessageConnection<ServiceMessage>(natsTransport, { signSalt });
+    conn.unmarshalPayload = Model.parse;
+    return conn;
   }
 
   protected createRequestMessage(type: string, data: unknown): DomainServiceMessage {
