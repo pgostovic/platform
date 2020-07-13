@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@phnq/log": "^1.1.4",
-    "@phnq/message": "^1.11.1",
+    "@phnq/message": "^1.11.2",
     "@phnq/model": "^1.9.3",
     "@types/cls-hooked": "^4.3.0",
     "bcrypt": "^3.0.8",
