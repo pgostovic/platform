@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import authenticate from '../../../auth/authenticate';
 import DomainServiceContext from '../../../DomainServiceContext';
 import { setPassword } from '../AuthApi';
-import { AUTH_CODE_EXPIRY } from '../model/account';
+import { AUTH_CODE_EXPIRY } from '../model/Account';
 import Session, { CREDENTIALS_SESSION_EXPIRY } from '../model/Session';
 
 const setPassword: setPassword = async ({ password }) => {
