@@ -63,8 +63,7 @@ export default class ApiService {
       log.warn('MESSAGE_SIGN_SALT not set');
     }
 
-    this.servicesConnection = new MessageConnection(this.natsTransport, { signSalt });
-    this.servicesConnection.unmarshalPayload = Model.parse;
+    this.servicesConnection = new MessageConnection(this.natsTransport, { signSalt, unmarshalPayload: Model.parse });
     this.servicesConnection.onReceive = message => this.onReceiveDomainMessage(message);
   }
 
