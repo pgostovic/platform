@@ -113,10 +113,8 @@ export default class DomainServiceContext<T = unknown> implements WithAuthApi {
       throw new Error('Not authenticated');
     } else if (this.service.getDomain() === 'auth') {
       this.accountId = this.accountId || (await authenticateConnection()).accountId;
-      console.log('------------ account id from authenticateConnection (auth service)', this.accountId);
     } else {
       this.accountId = this.accountId || (await this.auth.authenticateConnection()).accountId;
-      console.log('------------ account id from authenticateConnection (non-auth service)', this.accountId);
     }
   }
 

@@ -45,13 +45,7 @@ export default class DomainNATSClient extends DomainClient {
       this.log.warn(`MESSAGE_SIGN_SALT not set for domain client ${this.getDomain()}`);
     }
 
-    return new MessageConnection<ServiceMessage>(natsTransport, {
-      signSalt,
-      unmarshalPayload: p => {
-        console.log('----------------- DomainNATSClient UNMARSHAL', p, Model.parse(p));
-        return Model.parse(p);
-      },
-    });
+    return new MessageConnection<ServiceMessage>(natsTransport, { signSalt, unmarshalPayload: Model.parse });
   }
 
   protected createRequestMessage(type: string, data: unknown): DomainServiceMessage {

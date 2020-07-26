@@ -81,13 +81,7 @@ export default abstract class DomainService {
     });
     this.log('Connected to NATS.');
 
-    this.apiConnection = new MessageConnection(this.natsTransport, {
-      signSalt,
-      unmarshalPayload: p => {
-        console.log('----------------- UNMARSHAL', p, Model.parse(p));
-        return Model.parse(p);
-      },
-    });
+    this.apiConnection = new MessageConnection(this.natsTransport, { signSalt, unmarshalPayload: Model.parse });
 
     this.apiConnection.onReceive = message => this.onReceive(message);
 
