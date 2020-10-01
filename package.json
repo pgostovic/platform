@@ -51,7 +51,7 @@
     "@phnq/message": "^1.11.3",
     "@phnq/model": "^1.9.3",
     "@types/cls-hooked": "^4.3.0",
-    "bcrypt": "^3.0.8",
+    "bcrypt": "^5.0.0",
     "cls-hooked": "^4.2.2",
     "crypto-random-string": "^3.2.0",
     "pretty-hrtime": "^1.0.3",
